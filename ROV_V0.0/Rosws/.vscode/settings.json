@@ -1,0 +1,17 @@
+{
+    "cmake.configureOnOpen": false,
+    "python.autoComplete.extraPaths": [
+        "/home/qdsyq/Workspace/Rosws/install/uv_vision_py/lib/python3.10/site-packages",
+        "/home/qdsyq/Workspace/Rosws/install/uv_msgs/local/lib/python3.10/dist-packages",
+        "/home/qdsyq/Workspace/Rosws/install/uv_control_py/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/qdsyq/Workspace/Rosws/install/uv_vision_py/lib/python3.10/site-packages",
+        "/home/qdsyq/Workspace/Rosws/install/uv_msgs/local/lib/python3.10/dist-packages",
+        "/home/qdsyq/Workspace/Rosws/install/uv_control_py/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "remotePath": "/home/macabaka/Workspace/Rosws",
+    "host": "192.168.3.4",
+    "username": "macabaka",
+    "password": "000000",
+    "port": 22,
+    "secure": false,
+    "protocol": "sftp",
+    "uploadOnSave": false,
+    "passive": false,
+    "debug": false,
+    "privateKeyPath": null,
+    "passphrase": null,
+    "agent": null,
+    "allow": [],
+    "ignore": [
+        ".vscode",
+        ".git",
+        ".DS_Store",
+        "build",
+        "install",
+        "log"
+    ],
+    "generatedFiles": {
+        "extensionsToInclude": [
+            ""
+        ],
+        "path": ""
+    }
+}

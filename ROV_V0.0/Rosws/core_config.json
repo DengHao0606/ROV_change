@@ -1,0 +1,5 @@
+{
+    "pid_path":"/home/macabaka/Workspace/Rosws/datas/pid_parameters.json",
+    "h750_path":"/dev/ttyUSB1",
+    "f407_path":"/dev/ttyUSB0"
+}
