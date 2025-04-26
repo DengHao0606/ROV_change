@@ -51,7 +51,7 @@
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 uint8_t rx_char;
 uint16_t rx_index = 0;
-uint16_t short2 = 0;
+uint16_t short3 = 0;
 typedef struct {
   char cmd[16];
   int value;
