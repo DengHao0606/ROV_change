@@ -68,10 +68,10 @@ if __name__ == "__main__":
     
     with RtcClient(
         local_port=20001,
-        server_address=("192.168.31.96", 20000)
+        server_address=("10.110.122.245", 20000)
     ) as client:
         # 创建可调整窗口
-        cv2.namedWindow("ROV vedio", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("ROV video", cv2.WINDOW_NORMAL)
         
         # 设置初始窗口尺寸为屏幕分辨率
         root = tk.Tk()
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         root.destroy()
         # screen_width = 1920  # 改为你的实际屏幕宽度
         # screen_height = 1080 # 改为你的实际屏幕高度
-        cv2.resizeWindow("ROV vedio", screen_width, screen_height)
+        cv2.resizeWindow("ROV video", screen_width, screen_height)
         
         # 启动UDP监听线程
         udp_thread = threading.Thread(
@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 success, frame = client.getLatestFrame()
                 if success:
                     draw_status(frame)
-                    cv2.imshow("ROV vedio", frame)
+                    cv2.imshow("ROV video", frame)
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
 

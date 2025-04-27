@@ -231,11 +231,12 @@ def joy_controller_callback(monitor):
 
 if __name__ == "__main__":
     # 加载参数
-    host = "192.168.16.104"         #输入主机地址
+    host = "10.110.122.245"         #输入主机地址
     local_address = "192.168.31.96" #输入本地地址
     port = "10086"
     mode = "0"
-    '''host = input("主机地址?\r\n")
+    '''
+    host = input("主机地址?\r\n")
     port = input("主机端口?\r\n")
     mode = input("控制器?\r\n手柄[0]     键盘[1]\r\n")
     '''
