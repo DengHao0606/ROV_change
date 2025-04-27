@@ -33,10 +33,10 @@
 /* USER CODE BEGIN PTD */
 // 电源数据结构体
 typedef struct {
-  float voltage;  // ??(V)
-  float current;  // ??(A)
-  float power;    // ??(W)
-  uint8_t valid;  // ??????
+  float voltage;  // 电压(V)
+  float current;  // 电流(A)
+  float power;    // 功率(W)
+  uint8_t valid;  // 数据有效标志
 } PowerData_t;
 /* USER CODE END PTD */
 
