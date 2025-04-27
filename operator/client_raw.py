@@ -11,7 +11,7 @@ from uuv_webrtc import RtcClient
 if __name__ == "__main__":
     with RtcClient(
         local_port=20001,
-        server_address=("10.110.122.245", 20000)
+        server_address=("192.168.31.246", 20000)
     ) as client:
         try:
             while True:
