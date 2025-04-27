@@ -111,7 +111,7 @@ void dvl_startup(UART_HandleTypeDef *huart)
 {
     uint8_t BUFDVLPOWERON[14] = {0xFC, 0xCF, 0x03, 0x01, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
-    HAL_UART_Transmit(huart, BUFDVLPOWERON, 14, 10); // 关闭DVL
+    HAL_UART_Transmit(huart, BUFDVLPOWERON, 14, 10); // 开启DVL
 }
 
 
