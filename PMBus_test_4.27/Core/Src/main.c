@@ -295,10 +295,10 @@ int main(void)
     PowerData_t power = PMBus_ReadPowerData(PMBUS_ADDR);
     
     if(power.valid) {
-      DEBUG_PRINT("V: %.2fV, I: %.3fA, P: %.2fW\r\n", 
+      printf("V: %.2fV, I: %.3fA, P: %.2fW\r\n", 
                  power.voltage, power.current, power.power);
     } else {
-      DEBUG_PRINT("Power data read failed\r\n");
+      printf("Power data read failed\r\n");
     }
 
     /* LED???????? */
