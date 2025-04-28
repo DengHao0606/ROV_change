@@ -1,0 +1,50 @@
+{
+    "x": {
+        "p": 0.0,
+        "i": 0.0,
+        "d": 0.0,
+        "i_limit": 0.0,
+        "output_limit": 0.0,
+        "name": "x"
+    },
+    "y": {
+        "p": 0.0,
+        "i": 0.0,
+        "d": 0.0,
+        "i_limit": 0.0,
+        "output_limit": 0.0,
+        "name": "y"
+    },
+    "z": {
+        "p": 0.0,
+        "i": 0.0,
+        "d": 0.0,
+        "i_limit": 0.0,
+        "output_limit": 0.0,
+        "name": "z"
+    },
+    "rx": {
+        "p": 0.0,
+        "i": 0.0,
+        "d": 0.0,
+        "i_limit": 0.0,
+        "output_limit": 0.0,
+        "name": "rx"
+    },
+    "ry": {
+        "p": 0.0,
+        "i": 0.0,
+        "d": 0.0,
+        "i_limit": 0.0,
+        "output_limit": 0.0,
+        "name": "ry"
+    },
+    "rz": {
+        "p": 0.0,
+        "i": 0.0,
+        "d": 0.0,
+        "i_limit": 0.0,
+        "output_limit": 0.0,
+        "name": "rz"
+    }
+}

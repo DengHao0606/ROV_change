@@ -1,0 +1,27 @@
+| 命令             | 解释                      |
+| ---------------- | ------------------------- |
+|  help            | 列出指令列表              |
+|  task run n      | 从第 n 步开始执行任务队列 |
+|  task runonly n  | 执行第 n 步任务           |
+|  task add        | 在队列末尾处添加任务      |
+|  task add n      | 在队列第 n 位添加任务     |
+|  task del n      | 删除队列第 n 位任务       |
+|  task clear      | 清除所有任务              |
+|  task list       | 列出所有任务              |
+|  task mod n      | 修改队列第 n 位任务       |
+
+任务设置指令
+
+| 命令                         | 解释                                                         |
+| ---------------------------- | ------------------------------------------------------------ |
+|  movexyz x y z               | 移动 x,y,z 的相对位移                                        |
+|  movex/movey/movez/moverz d  | 移动 x/y/z/rz 的相对位移                                     |
+|  setz/setrz                  | 设置 z/rz                                                    |
+|  movexy                      | 移动 x,y 的相对位移                                          |
+|  pow 0/1                     |  0  机械爪收起                                               |
+|                              |  1 机械爪伸出                                                |
+|  search name cam             | 使用 cam 搜寻名为 name 的目标位置,并存储于寄存器 target 中   |
+|                              | target = {"name":···,"x":···,"y":···,"z":···}    |
+|  mtt                         | 移动至寄存器 target 所指定的位置                             |
+|  setp                        | 设置当前位置为路径点，储存于寄存器 backpoint                 |
+|  bac                         | 移动至寄存器 backpoint 所指定的位置                          |

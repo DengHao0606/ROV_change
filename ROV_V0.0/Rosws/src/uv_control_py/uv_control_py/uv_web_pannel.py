@@ -53,58 +53,51 @@ class CaptureNode(Node):
     #初始化webrtc服务
     def _init_webrtc(self, cam, port, width ,height):
 
-        # 创建自定义logger
-        self.webrtc_logger = logging.getLogger("WebRTC_Server")
-        self.webrtc_logger.setLevel(logging.INFO)
-        self.file_handler = logging.FileHandler(
-            filename=os.path.join(os.path.dirname(__file__), 'server.log'),
-            mode='w',
-            encoding='utf-8'
-            )
-        self.file_handler.setFormatter(logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s'))
-        self.webrtc_logger.addHandler(self.file_handler)
+        # # 创建自定义logger
+        # self.webrtc_logger = logging.getLogger("WebRTC_Server")
+        # self.webrtc_logger.setLevel(logging.INFO)
+        # self.file_handler = logging.FileHandler(
+        #     filename=os.path.join(os.path.dirname(__file__), 'server.log'),
+        #     mode='w',
+        #     encoding='utf-8'
+        #     )
+        # self.file_handler.setFormatter(logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s'))
+        # self.webrtc_logger.addHandler(self.file_handler)
 
         # 创建视频捕获
         self.front_cam_cap = CvCapture(
             cam=cam,
             frame_size=(int(width), int(height)),
-            fps=30,
-            logger=self.webrtc_logger
+            fps=30
+            # logger=self.webrtc_logger
         )
-        # 创建WebRTC服务器
-        self.webrtc_server = RtcServer(
-            cap=self.front_cam_cap,
-            port=int(port),
-            codec="video/VP8", 
-            logger=self.webrtc_logger
-        )
-        """
+        # # 创建WebRTC服务器
+        # self.webrtc_server = RtcServer(
+        #     cap=self.front_cam_cap,
+        #     port=int(port),
+        #     codec="video/VP8"
+        #     # logger=self.webrtc_logger
+        # )
+        # """
         # 启动WebRTC服务线程
         self.webrtc_thread = threading.Thread(
-            target=self._run_webrtc_server,
+            target=self._run_webrtc_server, args=(port,),
             daemon=True
         )
         self.webrtc_thread.start()
-        """
+        # """
 
 
-    def _run_webrtc_server(self):
+    def _run_webrtc_server(self, port):
         """运行WebRTC服务器"""
-        with self.webrtc_server as server:
+        with RtcServer(cap=self.front_cam_cap, port=port, codec="video/VP8") as server:
             try:
                 while rclpy.ok():
-                    # 获取视频帧
-                    ret, frame = self.front_cam_cap.read()
-                    if ret:
-                        # 添加数据叠加
-                        frame = self.front_cam_timer_callback(frame)
-                        # 更新WebRTC帧
-                        self.front_cam_cap.frame = frame
-                    time.sleep(1/30)  # 保持约30fps
+                    time.sleep(1)
             except KeyboardInterrupt:
                 pass
             finally:
-                self.webrtc_logger.info("服务器通过Ctrl+C退出")
+                self.get_logger().info("服务器通过Ctrl+C退出")
 
 
         """
@@ -189,37 +182,37 @@ class CaptureNode(Node):
         self.robot_speed = data
 
     #视频帧处理
-    def front_cam_timer_callback(self):
-        s, frame = self.front_cam_cap.read()
+    # def front_cam_timer_callback(self):
+    #     s, frame = self.front_cam_cap.read()
 
-        if s:
-            buff = "Temp  : {:.1f}  Hum : {:.2f}  Leak : {:d}".format(
-                self.cabin_state.temp, self.cabin_state.hum, self.cabin_state.leak)
-            cv2.putText(frame, buff, (0, self.letterheight), cv2.FONT_HERSHEY_SIMPLEX,
-                        self.letterzoom, COLOR_RED, 1, cv2.LINE_AA)
+    #     if s:
+    #         buff = "Temp  : {:.1f}  Hum : {:.2f}  Leak : {:d}".format(
+    #             self.cabin_state.temp, self.cabin_state.hum, self.cabin_state.leak)
+    #         cv2.putText(frame, buff, (0, self.letterheight), cv2.FONT_HERSHEY_SIMPLEX,
+    #                     self.letterzoom, COLOR_RED, 1, cv2.LINE_AA)
 
-            buff = "Speed : {:.2f} Deepth : {:.2f}".format(
-                self.robot_speed.y, self.robot_position.z)
-            cv2.putText(frame, buff, (0, 2*self.letterheight), cv2.FONT_HERSHEY_SIMPLEX,
-                        self.letterzoom, COLOR_RED, 1, cv2.LINE_AA)
+    #         buff = "Speed : {:.2f} Deepth : {:.2f}".format(
+    #             self.robot_speed.y, self.robot_position.z)
+    #         cv2.putText(frame, buff, (0, 2*self.letterheight), cv2.FONT_HERSHEY_SIMPLEX,
+    #                     self.letterzoom, COLOR_RED, 1, cv2.LINE_AA)
 
-            buff = "controller :  "+str(self.address)
-            cv2.putText(frame, buff, (0, 3*self.letterheight), cv2.FONT_HERSHEY_SIMPLEX,
-                        self.letterzoom, COLOR_RED, 1, cv2.LINE_AA)
+    #         buff = "controller :  "+str(self.address)
+    #         cv2.putText(frame, buff, (0, 3*self.letterheight), cv2.FONT_HERSHEY_SIMPLEX,
+    #                     self.letterzoom, COLOR_RED, 1, cv2.LINE_AA)
             
-            """
-            frame_compressed = cv2.resize(
-                frame, self.size, interpolation=cv2.INTER_AREA)
+    #         """
+    #         frame_compressed = cv2.resize(
+    #             frame, self.size, interpolation=cv2.INTER_AREA)
 
-            # 读取尺寸、推流
-            img = cv2.resize(frame_compressed, self.front_cam_size)
-            self.front_cam_pipe.stdin.write(img.tobytes())
-            """
+    #         # 读取尺寸、推流
+    #         img = cv2.resize(frame_compressed, self.front_cam_size)
+    #         self.front_cam_pipe.stdin.write(img.tobytes())
+    #         """
 
-        else:
-            self.get_logger().info('图像获取失败')
+    #     else:
+    #         self.get_logger().info('图像获取失败')
 
-        return frame
+    #     return frame
 
 #未修改
 def controller_callback(node, port):
@@ -257,9 +250,9 @@ def controller_callback(node, port):
         # node.get_logger().info(str(data))
         
 
-def webrtc_viewer(node):
-    while rclpy.ok():
-        node.front_cam_timer_callback()
+# def webrtc_viewer(node):
+#     while rclpy.ok():
+#         node.front_cam_timer_callback()
 
 """#改为使用webrtc
 def web_viewer(node):
@@ -296,10 +289,10 @@ def main(args=None):
         """
 
 
-        #启动视频线程
-        thread_viewer = threading.Thread(
-            target=webrtc_viewer, args=(node,))
-        thread_viewer.start()
+        # #启动视频线程
+        # thread_viewer = threading.Thread(
+        #     target=webrtc_viewer, args=(node,))
+        # thread_viewer.start()
         #启动控制线程
         thread_controller = threading.Thread(
             target=controller_callback, args=(node, int(opt.port[0])))
