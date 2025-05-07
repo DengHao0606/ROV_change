@@ -1,0 +1,15 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "can_process.h": "c",
+            "json_process.h": "c",
+            "main.h": "c"
+        }
+    },
+    "extensions": {}
+}

@@ -16,8 +16,8 @@ import pygame   #与游戏手柄进行一个交互的pygame模块，下面有个
 #                             88" . "88
 #                             (| -_- |)
 #                              O\ = /O
-#                           ____/`---'\____
-#                        .   ' \\| |// `.
+#                          ____/`---'\____
+#                           .' \\| |// `.
 #                         / \\||| : |||// \
 #                        / _||||| -:- |||||- \
 #                         | | \\\ - /// | |
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     
     localdata_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
     print("连接到服务器: %s:%s" % server_address)
-
+    
     # 创建手柄监听线程
     thread_joy_controller = threading.Thread(target=joy_controller_callback,args=(monitor,))
     

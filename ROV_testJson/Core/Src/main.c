@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "cJSON.h"
+#include "json_process.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,15 +48,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-#define RX_BUFFER_SIZE 256
-uint8_t rx_buffer[RX_BUFFER_SIZE];
-uint8_t rx_char;
-uint16_t rx_index = 0;
-uint16_t short0 = 0;
-typedef struct {
-  char cmd[16];
-  int value;
-} CommandData;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,84 +58,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void parse_json_with_cjson(uint8_t *json_str);
 //重定向printf
 int fputc(int ch,FILE *f)
 {
   uint8_t temp[1]={ch};
   HAL_UART_Transmit(&huart4,temp,1,2);
   return ch;
-}
-
-// 使用 cJSON 解析 JSON 数据
-void parse_json_with_cjson(uint8_t *json_str)
-{
-    cJSON *root = cJSON_Parse((char *)json_str);
-    if (root == NULL)
-    {
-        printf("Error: Invalid JSON!\r\n");
-        return;
-    }
-
-    // 提取 "cmd" 字段
-    cJSON *cmd_item = cJSON_GetObjectItem(root, "cmd");
-    if (cmd_item == NULL)
-    {
-        printf("Error: 'cmd' not found!\r\n");
-        cJSON_Delete(root);
-        return;
-    }
-
-    // 提取 "value" 字段
-    cJSON *value_item = cJSON_GetObjectItem(root, "value");
-    if (value_item == NULL)
-    {
-        printf("Error: 'value' not found!\r\n");
-        cJSON_Delete(root);
-        return;
-    }
-    //提取"name" 字段
-    cJSON *name_item = cJSON_GetObjectItem(root, "name");
-    if (value_item == NULL)
-    {
-        printf("Error: 'value' not found!\r\n");
-        cJSON_Delete(root);
-        return;
-    }
-    cJSON *number_item = cJSON_GetObjectItem(root, "number");
-    if (number_item == NULL)
-    {
-        printf("Error: 'value' not found!\r\n");
-        cJSON_Delete(root);
-        return;
-    }
-    cJSON *ps2_item = cJSON_GetObjectItem(root, "ps2");
-    if (number_item == NULL)
-    {
-        printf("Error: 'value' not found!\r\n");
-        cJSON_Delete(root);
-        return;
-    }
-    // 打印解析结果
-    printf("CMD: %s, VALUE: %d, NAME:%s, NUMBER: %d, PS2: %f\r\n", cmd_item->valuestring, value_item->valueint,
-      name_item->valuestring, number_item->valueint, ps2_item->valuedouble);
-
-    // 执行命令（示例：控制 LED�?
-    if (strcmp(cmd_item->valuestring, "led") == 0)
-    {
-        if (value_item->valueint == 1)
-        {
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);  // LED ON
-            printf("LED ON\r\n");
-        }
-        else if (value_item->valueint == 0)
-        {
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);  // LED OFF
-            printf("LED OFF\r\n");
-        }
-    }
-
-    cJSON_Delete(root);  // 释放 cJSON 内存
 }
 /* USER CODE END 0 */
 
@@ -180,8 +100,9 @@ int main(void)
   MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   printf("STM32F407 USART4 JSON Parser Ready\r\n");
+  JSON_Process_Init(); 
   HAL_Delay(2000);
-  HAL_UART_Receive_IT(&huart5, &rx_char, 1);  // 启动接收中断
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -189,7 +110,6 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
 }
   /* USER CODE END 3 */
@@ -242,36 +162,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-// UART5 接收中断回调
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance == UART5)
-    {
-        if (rx_char == '\n')  // �?测到换行符（�?条完�? JSON�?
-        {
-            rx_buffer[rx_index] = '\0';  // 字符串结束符
-            printf("JSON: ");
-            printf((char *)rx_buffer);
-            printf("\r\n");
-
-            parse_json_with_cjson(rx_buffer);  // 解析 JSON
-            rx_index = 0;  // 重置缓冲�?
-        }
-        else
-        {
-            if (rx_index < RX_BUFFER_SIZE - 1)
-                rx_buffer[rx_index++] = rx_char;
-            else
-            {
-              printf("Error: RX Buffer Overflow!\r\n");
-                rx_index = 0;  // 缓冲区溢出，重置
-            }
-        }
-        HAL_UART_Receive_IT(&huart5, &rx_char, 1);  // 重新启用接收
-    }
-}
-
-
 /* USER CODE END 4 */
 
 /**

@@ -1,0 +1,28 @@
+#ifndef __JSON_PROCESS_H
+#define __JSON_PROCESS_H
+
+#include "cJSON.h"
+#include "main.h"
+
+typedef struct {
+  uint8_t          buf[512];      // 接收数据缓存数组
+  volatile uint8_t rx_len;        // 接收一帧数据的长度
+  volatile uint8_t recv_end_flag; // 一帧数据接收完成标志
+  int              cnt;
+} RecBuf;
+
+/* json的键 */
+typedef struct {
+  float x;               // x 坐标值，浮点数类型
+  float y;               // y 坐标值，浮点数类型
+  float z;               // z 坐标值，浮点数类型
+  float roll;            // 翻滚角度值，浮点数类型
+  float pitch;           // 俯仰角度值，浮点数类型
+  float yaw;             // 偏航角度值，浮点数类型
+  float servo0;          // 舵机 0 的值，浮点数类型
+} JSON_Command_t;
+
+void JSON_Process_Init(void);
+void JSON_Process_Data(uint8_t *json_str);
+
+#endif
