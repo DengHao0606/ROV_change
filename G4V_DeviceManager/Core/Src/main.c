@@ -113,9 +113,9 @@ int main(void)
   {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
-    Canfd1Transmit64(0x000 + 0x005, can_send);
-    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
-    HAL_Delay(1000);
+    // Canfd1Transmit64(0x000 + 0x005, can_send);
+    // HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
+    // HAL_Delay(1000);
     }
   /* USER CODE END 3 */
 }

@@ -13,13 +13,15 @@ typedef struct {
 
 /* json的键 */
 typedef struct {
-  float x;               // x 坐标值，浮点数类型
-  float y;               // y 坐标值，浮点数类型
-  float z;               // z 坐标值，浮点数类型
+  float x;               //  x 坐标值，浮点数类型
+  float y;               //  y 坐标值，浮点数类型
+  float z;               //  z 坐标值，浮点数类型
   float roll;            // 翻滚角度值，浮点数类型
   float pitch;           // 俯仰角度值，浮点数类型
   float yaw;             // 偏航角度值，浮点数类型
   float servo0;          // 舵机 0 的值，浮点数类型
+  float servo1;          // 舵机 1 的值，浮点数类型
+  int state;           // 模式状态 的值，浮点数类型
 } JSON_Command_t;
 
 void JSON_Process_Init(void);
