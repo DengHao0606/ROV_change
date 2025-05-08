@@ -14,31 +14,31 @@ static uint8_t rx_char;
 /* 私有函数 */
 static void parse_json_data(uint8_t *json_str);
 
-// // 自定义内存分配函数
-// void* custom_malloc(size_t size) {
-//   return malloc(size);
-// }
-
-// // 自定义内存释放函数
-// void custom_free(void* ptr) {
-//   free(ptr);
-// }
-
-/* 初始化JSON处理器 */
+/*
+ * 函数名: JSON_Process_Init
+ * 描述  : 初始化JSON处理器，启动串口接收中断，并初始化接收缓冲区
+ * 输入  : 无
+ * 输出  : 无
+ * 备注  : 调用HAL_UART_Receive_IT函数启动串口接收中断，将接收缓冲区rx_buffer清零，并重置接收索引rx_index，
+ *         同时打印初始化成功的提示信息。
+ */
 void JSON_Process_Init(void) 
 {
-  // cJSON_Hooks hooks = {custom_malloc, custom_free}; // 创建 cJSON_Hooks 结构体实例
-  // cJSON_InitHooks(&hooks);  // 配置 cJSON 的内存分配和释放函数
     HAL_UART_Receive_IT(&huart8, &rx_char, 1);  // 启动接收中断
     memset(rx_buffer, 0, sizeof(rx_buffer));
     rx_index = 0;
     printf("JSON init success\r\n");
 }
 
-/* 处理JSON数据 */
+/*
+ * 函数名: JSON_Process_Data
+ * 描述  : 处理接收到的JSON数据，调用parse_json_data函数进行解析
+ * 输入  : json_str - 指向接收到的JSON数据的指针
+ * 输出  : 无
+ * 备注  : 
+ */
 void JSON_Process_Data(uint8_t *json_str)
 {
-    //printf("start process...\r\n");
     parse_json_data(json_str);
 }
 
@@ -76,7 +76,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* 解析JSON数据 */
+/*
+ * 函数名: parse_json_data
+ * 描述  : 解析接收到的JSON数据，提取其中的字段并打印解析结果，调用时先在启动文件里修改Heap_Size
+ * 输入  : json_str - 指向接收到的JSON数据的指针
+ * 输出  : 无
+ * 备注  :   
+ */
 static void parse_json_data(uint8_t *json_str)
 {
   cJSON *root = cJSON_Parse((char *)json_str);
@@ -103,17 +109,18 @@ static void parse_json_data(uint8_t *json_str)
   cJSON *z_item = cJSON_GetObjectItem(root, "z");
     if  (z_item) command.z = z_item->valuedouble;
 
-  // cJSON *roll_item = cJSON_GetObjectItem(root, "roll");
-  //   if  (roll_item) command.roll = roll_item->valuedouble;//不需解析
-
   cJSON *yaw_item = cJSON_GetObjectItem(root, "yaw");
     if  (yaw_item) command.yaw = yaw_item->valuedouble;
+    
+  cJSON *servo0_item = cJSON_GetObjectItem(root, "servo0");
+    if  (servo0_item) command.servo0 = servo0_item->valuedouble;
+
+  /* 不需要解析 */
+  // cJSON *roll_item = cJSON_GetObjectItem(root, "roll");
+  //   if  (roll_item) command.roll = roll_item->valuedouble;
 
   // cJSON *pitch_item = cJSON_GetObjectItem(root, "pitch");
   //   if  (pitch_item) command.pitch = pitch_item->valuedouble;
-
-  cJSON *servo0_item = cJSON_GetObjectItem(root, "servo0");
-    if  (servo0_item) command.servo0 = servo0_item->valuedouble;
 
   // cJSON *servo1_item = cJSON_GetObjectItem(root, "servo1");
   //   if  (servo1_item) command.servo1 = servo1_item->valuedouble;
@@ -127,7 +134,5 @@ static void parse_json_data(uint8_t *json_str)
   printf("z: %.2f  ",command.z);
   printf("yaw: %.2f  ",command.yaw);
   printf("servo0: %.3f\r\n",command.servo0);
-  // printf("servo1: %.3f  ",command.servo1);
-  // printf("state: %d\r\n",command.state);
   cJSON_Delete(root);
 }
