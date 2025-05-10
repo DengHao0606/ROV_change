@@ -1,10 +1,16 @@
 #include "json_process.h"
+#include "comm.h"
+#include "main.h"
+
 #include "usart.h"
+#include "tim.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 RecBuf uart8rec = {0};
+float servo0angle = 0.0;
+extern int threadmonitor_uart8;
 
 /* 私有变量 */
 static uint8_t rx_buffer[512];
@@ -27,7 +33,7 @@ void JSON_Process_Init(void)
     HAL_UART_Receive_IT(&huart8, &rx_char, 1);  // 启动接收中断
     memset(rx_buffer, 0, sizeof(rx_buffer));
     rx_index = 0;
-    printf("JSON init success\r\n");
+    HAL_Delay(100); // 稍作延迟防止无法进入中断
 }
 
 /*
@@ -54,6 +60,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     // 串口接收控制指令
     if (huart == &huart8) 
     {
+        threadmonitor_uart8 = 200;
         if (uart8rec.buf[uart8rec.cnt - 1] == '{' && uart8rec.buf[uart8rec.cnt] == '\"' && uart8rec.cnt > 0)
         {
             uart8rec.cnt = 1;
@@ -93,7 +100,7 @@ static void parse_json_data(uint8_t *json_str)
       {
           printf("Error before: %s\n", error_ptr);
       }
-      printf("Error\r\n");
+      // printf("Error\r\n");
       return;
   }
 
@@ -115,6 +122,16 @@ static void parse_json_data(uint8_t *json_str)
   cJSON *servo0_item = cJSON_GetObjectItem(root, "servo0");
     if  (servo0_item) command.servo0 = servo0_item->valuedouble;
 
+
+
+  openloop_thrust[0] = command.x;
+  openloop_thrust[1] = command.y;
+  openloop_thrust[2] = command.z;
+  openloop_thrust[3] = command.roll;
+  openloop_thrust[4] = command.yaw;
+  openloop_thrust[5] = command.pitch;
+  servo0angle = command.servo0;
+
   /* 不需要解析 */
   // cJSON *roll_item = cJSON_GetObjectItem(root, "roll");
   //   if  (roll_item) command.roll = roll_item->valuedouble;
@@ -128,11 +145,19 @@ static void parse_json_data(uint8_t *json_str)
   // cJSON *state_item = cJSON_GetObjectItem(root, "state");
   //   if  (state_item) command.state = state_item->valueint;
 
-  /* 打印解析结果 */
-  printf("x: %.2f  ",command.x);
-  printf("y: %.2f  ",command.y);
-  printf("z: %.2f  ",command.z);
-  printf("yaw: %.2f  ",command.yaw);
-  printf("servo0: %.3f\r\n",command.servo0);
+  // /* 打印解析结果 */
+  if(servo0angle > 0.5)
+  {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_RESET);
+  }
+  printf("x: %.2f  ",openloop_thrust[0]);
+  printf("y: %.2f  ",openloop_thrust[1]);
+  printf("z: %.2f  ",openloop_thrust[2]);
+  printf("yaw: %.2f  ",openloop_thrust[4]);
+  printf("servo0: %.3f\r\n",servo0angle);
   cJSON_Delete(root);
 }

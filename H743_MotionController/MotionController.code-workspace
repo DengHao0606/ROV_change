@@ -1,0 +1,21 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "thrust.h": "c",
+            "motor.h": "c",
+            "autocontrol.h": "c",
+            "main.h": "c",
+            "json_process.h": "c",
+            "can_process.h": "c",
+            "comm.h": "c",
+            "cjson.h": "c",
+            "usart.h": "c"
+        }
+    },
+    "extensions": {}
+}

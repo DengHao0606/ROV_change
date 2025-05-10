@@ -1,7 +1,7 @@
 #include "can_process.h"
+#include "fdcan.h"
 #include <string.h>
 #include <stdio.h>
-#include "fdcan.h"
 
 CanRx canfd1_rx = {0};
 

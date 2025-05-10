@@ -4,14 +4,14 @@
 #include "cJSON.h"
 #include "main.h"
 
-typedef struct {
-  uint8_t          buf[512];      // 接收数据缓存数组
-  volatile uint8_t rx_len;        // 接收一帧数据的长度
-  volatile uint8_t recv_end_flag; // 一帧数据接收完成标志
-  int              cnt;
-} RecBuf;
+// typedef struct {
+//   uint8_t          buf[512];      // 接收数据缓存数组
+//   volatile uint8_t rx_len;        // 接收一帧数据的长度
+//   volatile uint8_t recv_end_flag; // 一帧数据接收完成标志
+//   int              cnt;
+// } RecBuf;
 
-/* json的键 */
+/*JSON 数据中的各个键值对，用于存储解析后的相关数据*/
 typedef struct {
   float x;               //  x 坐标值，浮点数类型
   float y;               //  y 坐标值，浮点数类型
@@ -23,6 +23,7 @@ typedef struct {
   float servo1;          // 舵机 1 的值，浮点数类型
   int state;           // 模式状态 的值，浮点数类型
 } JSON_Command_t;
+
 
 void JSON_Process_Init(void);
 void JSON_Process_Data(uint8_t *json_str);

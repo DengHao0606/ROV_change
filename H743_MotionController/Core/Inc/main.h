@@ -31,17 +31,33 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "autocontrol.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef struct {
+  uint8_t state[6];
+  PositionalPID x;
+  PositionalPID y;
+  PositionalPID z;
+  PositionalPID rx;
+  PositionalPID ry;
+  PositionalPID rz;
+} RobotController;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+extern CoordinateSystems robot;
+extern RobotController robot_controller;
 
+extern float openloop_thrust[6];
+
+// extern int led_motion;
+// extern int led_dataup;
+// extern int led_uart4;
+// extern int led_uart7;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
