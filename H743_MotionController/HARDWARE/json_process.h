@@ -11,6 +11,20 @@
 //   int              cnt;
 // } RecBuf;
 
+// 定义电机参数结构体
+typedef struct {
+    int motor_num;
+    float np_mid;
+    float np_ini;
+    float pp_ini;
+    float pp_mid;
+    float nt_end;
+    float nt_mid;
+    float pt_mid;
+    float pt_end;
+} MotorParams_t;
+
+
 /*JSON 数据中的各个键值对，用于存储解析后的相关数据*/
 typedef struct {
   float x;               //  x 坐标值，浮点数类型
@@ -22,10 +36,12 @@ typedef struct {
   float servo0;          // 舵机 0 的值，浮点数类型
   float servo1;          // 舵机 1 的值，浮点数类型
   int state;           // 模式状态 的值，浮点数类型
+  MotorParams_t motors[6];
 } JSON_Command_t;
+
 
 
 void JSON_Process_Init(void);
 void JSON_Process_Data(uint8_t *json_str);
-
+static void parse_thrust_params(cJSON *motor_item, int motor_num);
 #endif

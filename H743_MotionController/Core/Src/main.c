@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "fdcan.h"
 #include "tim.h"
 #include "usart.h"
@@ -68,8 +69,8 @@ float Vx = 0, Vy = 0, Ry = 0, Tx = 0, Ty = 0, Tz = 0, Mx = 0, My = 0, Mz = 0;
 
 CoordinateSystems robot_pos; // 真实的机器人
 
-CoordinateSystems robot_im_pos;    // 假的水平的机器人,用于计算机器人水平位置误�??
-CoordinateSystems robot_im_spd;    // 速度空间中的机器�??,用于计算机器人水平横移�?�前进�?�度
+CoordinateSystems robot_im_pos;    // 假的水平的机器人,用于计算机器人水平位置误�?????????
+CoordinateSystems robot_im_spd;    // 速度空间中的机器�?????????,用于计算机器人水平横移�?�前进�?�度
 CoordinateSystems robot_im_thrust; // 推力空间中的的机器人,用于计算推力
 CoordinateVector  required_thrust = {0, 0, 0, 0, 0, 0};
 
@@ -118,9 +119,9 @@ int fputc(int ch,FILE *f)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /*
- * 函数�?????????: HAL_TIM_PeriodElapsedCallback
- * 描述  : 定时器中断处�?????????
- * 输入  : TIM_HandleTypeDef *htim 定时器地�?????????
+ * 函数�????????????????: HAL_TIM_PeriodElapsedCallback
+ * 描述  : 定时器中断处�????????????????
+ * 输入  : TIM_HandleTypeDef *htim 定时器地�????????????????
  * 输出  : /
  * 备注  : 用于处理数据
  */
@@ -142,9 +143,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         if (threadmonitor_tim2 <= 0)
         {
-            __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
-            HAL_TIM_Base_Start_IT(&htim2);
-            threadmonitor_tim2 = 30;
+            // __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
+            // HAL_TIM_Base_Start_IT(&htim2);
+            // threadmonitor_tim2 = 30;
         }
         if (threadmonitor_tim3 <= 0)
         {
@@ -161,7 +162,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         if (threadmonitor_uart8 <= 0)
         {
             MX_UART8_Init();
-            //JSON_Process_Init();防止卡死
+            JSON_Process_Init();//防止卡死
             HAL_UART_Receive_IT(&huart8, uart8rec.buf + uart8rec.cnt, 1);
             threadmonitor_uart8 = 50;
         }
@@ -199,63 +200,63 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     //     led_dataup = !led_dataup;
     }
     //  3号定时器中断
-    //  频率 40hz
+    //  频率 30hz
     else if (htim == (&htim3))
     {
-    //     threadmonitor_tim2 = 20;
+        threadmonitor_tim2 = 20;
 
-    //     // Cs data refresh
-    //     robot.base.vector.x  = imu.pos.x;
-    //     robot.base.vector.y  = imu.pos.y;
-    //     robot.base.vector.z  = imu.pos.z;
-    //     robot.base.vector.rx = imu.pos.rx;
-    //     robot.base.vector.ry = imu.pos.ry;
-    //     robot.base.vector.rz = imu.pos.rz;
+        // // Cs data refresh
+        // robot.base.vector.x  = imu.pos.x;
+        // robot.base.vector.y  = imu.pos.y;
+        // robot.base.vector.z  = imu.pos.z;
+        // robot.base.vector.rx = imu.pos.rx;
+        // robot.base.vector.ry = imu.pos.ry;
+        // robot.base.vector.rz = imu.pos.rz;
 
-    //     // refresh CoordinateSystems
-    //     robot.base.extract(&(robot.base));
+        // // refresh CoordinateSystems
+        // robot.base.extract(&(robot.base));
 
-    //     // Cs transform
-    //     robot.world2base(&robot);
+        // // Cs transform
+        // robot.world2base(&robot);
 
-    //     // 计算各控制器�??�??测量值与误差值DF
-    //     // 机器人坐�??
-    //     robot_im_pos.base.vector.x = robot_pos.base.vector.x = imu.pos.x;
-    //     robot_im_pos.base.vector.y = robot_pos.base.vector.y = imu.pos.y;
-    //     robot_im_pos.base.vector.z = robot_pos.base.vector.z = imu.pos.z;
+        // // 计算各控制器�?????????�?????????测量值与误差值DF
+        // // 机器人坐�?????????
+        // robot_im_pos.base.vector.x = robot_pos.base.vector.x = imu.pos.x;
+        // robot_im_pos.base.vector.y = robot_pos.base.vector.y = imu.pos.y;
+        // robot_im_pos.base.vector.z = robot_pos.base.vector.z = imu.pos.z;
 
-    //     // 目标位置
-    //     robot_im_pos.target_inworld.vector.x = robot_pos.target_inworld.vector.x = robot.target_inworld.vector.x;
-    //     robot_im_pos.target_inworld.vector.y = robot_pos.target_inworld.vector.y = robot.target_inworld.vector.y;
-    //     robot_im_pos.target_inworld.vector.z = robot_pos.target_inworld.vector.z = robot.target_inworld.vector.z;
-    //     robot_im_pos.target_inworld.vector.rz = robot_pos.target_inworld.vector.rz = robot.target_inworld.vector.rz;
-    //     robot_im_pos.target_inworld.extract(&(robot_im_pos.target_inworld));
+        // // 目标位置
+        // robot_im_pos.target_inworld.vector.x = robot_pos.target_inworld.vector.x = robot.target_inworld.vector.x;
+        // robot_im_pos.target_inworld.vector.y = robot_pos.target_inworld.vector.y = robot.target_inworld.vector.y;
+        // robot_im_pos.target_inworld.vector.z = robot_pos.target_inworld.vector.z = robot.target_inworld.vector.z;
+        // robot_im_pos.target_inworld.vector.rz = robot_pos.target_inworld.vector.rz = robot.target_inworld.vector.rz;
+        // robot_im_pos.target_inworld.extract(&(robot_im_pos.target_inworld));
 
-    //     // 姿�??
-    //     robot_pos.base.vector.rx = imu.pos.rx;
-    //     robot_pos.base.vector.ry = imu.pos.ry;
-    //     robot_pos.base.vector.rz = imu.pos.rz;
-    //     robot_pos.base.extract(&(robot_pos.base));
+        // // 姿�??
+        // robot_pos.base.vector.rx = imu.pos.rx;
+        // robot_pos.base.vector.ry = imu.pos.ry;
+        // robot_pos.base.vector.rz = imu.pos.rz;
+        // robot_pos.base.extract(&(robot_pos.base));
 
-    //     robot_im_spd.base.vector.rx = robot_im_thrust.base.vector.rx = robot_pos.base.vector.rx;
-    //     robot_im_spd.base.vector.ry = robot_im_thrust.base.vector.ry = robot_pos.base.vector.ry;
-    //     robot_im_pos.base.vector.rz                                  = robot_pos.base.vector.rz;
+        // robot_im_spd.base.vector.rx = robot_im_thrust.base.vector.rx = robot_pos.base.vector.rx;
+        // robot_im_spd.base.vector.ry = robot_im_thrust.base.vector.ry = robot_pos.base.vector.ry;
+        // robot_im_pos.base.vector.rz                                  = robot_pos.base.vector.rz;
 
 
-    //     // 导出各参考系变换器对象的基底矩阵
-    //     robot_im_pos.base.extract(&(robot_im_pos.base));
-    //     robot_im_spd.base.extract(&(robot_im_spd.base));
-    //     robot_im_thrust.base.extract(&(robot_im_thrust.base));
+        // // 导出各参考系变换器对象的基底矩阵
+        // robot_im_pos.base.extract(&(robot_im_pos.base));
+        // robot_im_spd.base.extract(&(robot_im_spd.base));
+        // robot_im_thrust.base.extract(&(robot_im_thrust.base));
 
-    //     // 计算机器人的水平横移与前进�?�度
-    //     robot_im_spd.target_inbase.vector.x = imu.spd.x;
-    //     robot_im_spd.target_inbase.vector.y = imu.spd.y;
-    //     robot_im_spd.target_inbase.vector.z = imu.spd.z;
-    //     robot_im_spd.target_inbase.extract(&(robot_im_spd.target_inbase));
-    //     robot_im_spd.base2world(&robot_im_spd);
+        // // 计算机器人的水平横移与前进�?�度
+        // robot_im_spd.target_inbase.vector.x = imu.spd.x;
+        // robot_im_spd.target_inbase.vector.y = imu.spd.y;
+        // robot_im_spd.target_inbase.vector.z = imu.spd.z;
+        // robot_im_spd.target_inbase.extract(&(robot_im_spd.target_inbase));
+        // robot_im_spd.base2world(&robot_im_spd);
 
-    //     // 计算机器人参考系中的水平误差（横向与前向�??
-    //     robot_im_pos.world2base(&robot_im_pos);
+        // // 计算机器人参考系中的水平误差（横向与前向�?????????
+        // robot_im_pos.world2base(&robot_im_pos);
 
 
         // Pid controller refresh
@@ -376,13 +377,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_FDCAN1_Init();
+  MX_DMA_Init();
   MX_UART7_Init();
   MX_UART8_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_FDCAN1_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 // uart it start
@@ -445,6 +447,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

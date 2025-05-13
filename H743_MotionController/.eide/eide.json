@@ -38,6 +38,9 @@
                     "path": "Core/Src/gpio.c"
                   },
                   {
+                    "path": "Core/Src/dma.c"
+                  },
+                  {
                     "path": "Core/Src/fdcan.c"
                   },
                   {

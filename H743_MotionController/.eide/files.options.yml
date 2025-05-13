@@ -17,7 +17,4 @@ version: "2.0"
 options:
     MotionController:
         files: {}
-        virtualPathFiles:
-            <virtual_root>/Application/User/Core/fdcan.c: ""
-            <virtual_root>/Application/User/Core/tim.c: ""
-            <virtual_root>/Drivers/STM32H7xx_HAL_Driver/stm32h7xx_hal_fdcan.c: ""
+        virtualPathFiles: {}

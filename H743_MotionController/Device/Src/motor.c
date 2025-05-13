@@ -3,7 +3,7 @@
 
 ThrustCurve thrustcurve[6];
 extern RobotController robot_controller;
-
+extern float servo0angle;
 const int motornum[6] = {0, 1, 2, 3, 4, 5};
 
 float line(float startx, float endx, float starty, float endy, float input)
@@ -176,6 +176,21 @@ void MotorPwmRefresh(float *motorthrust)
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3,  pwmoutput[3]);
     __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2 * Motor_Pwm_Median_Duty - pwmoutput[4]);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, pwmoutput[5]);
+  if(pwmoutput[3] > 3000)
+  {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_SET);
+  }
+  else
+  {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_RESET);
+  }
+    // printf("5  1 %d\r\n",pwmoutput[0]);
+    // printf("5  2 %d\r\n",2 * Motor_Pwm_Median_Duty - pwmoutput[1]);    
+    // printf("4  2 %d\r\n",2 * Motor_Pwm_Median_Duty - pwmoutput[2]);
+    // printf("5  4 %d\r\n",pwmoutput[3]);
+    // printf("4  1 %d\r\n",2 * Motor_Pwm_Median_Duty - pwmoutput[4]);
+    // printf("5  4 %d\r\n",pwmoutput[5]);
+    // printf("servo0: %.3f\r\n",servo0angle);
  /*
     __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 3500);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_2, 3500);

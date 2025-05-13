@@ -7,6 +7,7 @@ import threading
 import os
 import portalocker
 import serial
+import struct
 import pygame   #与游戏手柄进行一个交互的pygame模块，下面有个joystick的函数用于获取一些操作轴的相关信息的
 
 #在windows读取的手柄的信息通过socket通道进行传输
@@ -61,6 +62,48 @@ import pygame   #与游戏手柄进行一个交互的pygame模块，下面有个
 #手柄键位分布 以及编号
 #备注：   axis(2)方向，控制左右的方向。     axis(0)方向，控制yaw的方向。    axis(1)方向，控制前后的方向。    axis(3)方向，控制上下的方向。
 
+# 硬件控制类（通过UDP协议发送数据）
+class HardwareController:
+    def __init__(self, server_address):
+        self.server_address = server_address
+        self.curves = type('', (), {})()  # 动态创建曲线数据对象
+        
+        # 初始化电机参数（示例值，需根据实际硬件调整）
+        motors = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5']
+        default_values = {
+            'num': 0, 'np_mid': 1.0, 'np_ini': 0.5, 'pp_ini': 0.5,
+            'pp_mid': 1.0, 'nt_end': 0.0, 'nt_mid': 0.5,
+            'pt_mid': 0.5, 'pt_end': 0.0
+        }
+        
+        for i, motor in enumerate(motors):
+            values = default_values.copy()
+            values['num'] = i  # 电机编号
+            setattr(self.curves, motor, type('', (), values)())
+
+    def send_thrust_data(self, motor_name, client_socket):
+        """发送单个电机的推力参数到网络"""
+        motor = getattr(self.curves, motor_name)
+        data = {
+            "cmd": "thrust_init",
+            "motor": motor.num,
+            "np_mid": motor.np_mid,
+            "np_ini": motor.np_ini,
+            "pp_ini": motor.pp_ini,
+            "pp_mid": motor.pp_mid,
+            "nt_end": motor.nt_end,
+            "nt_mid": motor.nt_mid,
+            "pt_mid": motor.pt_mid,
+            "pt_end": motor.pt_end
+        }
+        json_str = json.dumps(data) + "\n"
+        client_socket.sendto(json_str.encode(), self.server_address)
+
+    def hwinit(self, client_socket):
+        """初始化所有电机参数"""
+        for motor_name in ["m0", "m1", "m2", "m3", "m4", "m5"]:
+            self.send_thrust_data(motor_name, client_socket)
+            time.sleep(0.05)  # 防止数据堆积
 
 
 #控制器的值
@@ -68,12 +111,12 @@ CONTROLLER_INIT = {
     "x": 0.0,
     "y": 0.0,
     "z": 0.0,
-    # "roll": 0.0,
-    # "pitch": 0.0,
+    "roll": 0.0,
+    "pitch": 0.0,
     "yaw": 0.0,
     "servo0": 0.0,
-    # "servo1": 0.0,
-    # "state":0,
+    "servo1": 0.0,
+    "state":0,
 }
 
 
@@ -241,15 +284,16 @@ def joy_controller_callback(monitor):
 
 
 if __name__ == "__main__":
+    count = 0
     # 串口参数
     
     # serial_port = 'COM15'  # 根据实际情况更改串口号
     # baud_rate = 115200  # 设置波特率
     # ser = serial.Serial(serial_port, baud_rate, timeout=1)  # 打开串口连接
-    
+
     # 加载参数
-    host = '192.168.0.10'
-    port = '5000'
+    host = "192.168.0.10"
+    port = "5000"
     mode = "0"
     '''
     host = input("主机地址?\r\n")
@@ -257,9 +301,13 @@ if __name__ == "__main__":
     mode = input("控制器?\r\n手柄[0]     键盘[1]\r\n")
     '''
     monitor = Monitor(int(mode))
+
     server_address = (str(host), int(port))
+    hw_controller = HardwareController(server_address)
+
+
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    #socket通信，使得局域网或者有路由器交换机的网络结构能够进行通信
-    client_socket.bind(('', 60000))
+    client_socket.bind(('', 1000))      # 绑定本地端口
 
     localdata_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
 
@@ -283,9 +331,12 @@ if __name__ == "__main__":
         #time.sleep(2)
         
         msg = json.dumps(monitor.controller) # 使用json传输数据，这里是将python的字典格式转为json字符串的形式的操作
-        client_socket.sendto((msg + '\r\n').encode(), server_address)
+        client_socket.sendto((msg + '\n').encode(), server_address)
         # ser.write((msg + '\n').encode())  # 向串口发送 JSON + 换行符
-        
+        # 添加计数器逻辑
+        count += 1
+        if count % 10 in [1, 5]:
+            hw_controller.hwinit(client_socket)  # 初始化所有电机参数
         
         localdata = monitor.controller.copy()
         localdata["mode"] = mild_mode
