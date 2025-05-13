@@ -9,7 +9,7 @@
 #define UART_RX_STATE_DEAL 1
 
 typedef struct {
-    uint8_t          buf[512];      // 接收数据缓存数组
+    uint8_t          buf[1024];      // 接收数据缓存数组
     volatile uint8_t rx_len;        // 接收一帧数据的长度
     volatile uint8_t recv_end_flag; // 一帧数据接收完成标志
     int              cnt;

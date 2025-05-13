@@ -62,43 +62,99 @@ import pygame   #与游戏手柄进行一个交互的pygame模块，下面有个
 #手柄键位分布 以及编号
 #备注：   axis(2)方向，控制左右的方向。     axis(0)方向，控制yaw的方向。    axis(1)方向，控制前后的方向。    axis(3)方向，控制上下的方向。
 
+# 全局电机参数字典
+MOTOR_PARAMS = {
+    "m0": {
+        'num': 0,
+        'np_mid': 1.0,
+        'np_ini': 0.5,
+        'pp_ini': 0.5,
+        'pp_mid': 1.0,
+        'nt_end': 0.0,
+        'nt_mid': 0.5,
+        'pt_mid': 0.5,
+        'pt_end': 0.0
+    },
+    "m1": {
+        'num': 1,
+        'np_mid': 1.0,
+        'np_ini': 0.5,
+        'pp_ini': 0.5,
+        'pp_mid': 1.0,
+        'nt_end': 0.0,
+        'nt_mid': 0.5,
+        'pt_mid': 0.5,
+        'pt_end': 0.0
+    },
+    "m2": {
+        'num': 2,
+        'np_mid': 1.0,
+        'np_ini': 0.5,
+        'pp_ini': 0.5,
+        'pp_mid': 1.0,
+        'nt_end': 0.0,
+        'nt_mid': 0.5,
+        'pt_mid': 0.5,
+        'pt_end': 0.0
+    },
+    "m3": {
+        'num': 3,
+        'np_mid': 1.0,
+        'np_ini': 0.5,
+        'pp_ini': 0.5,
+        'pp_mid': 1.0,
+        'nt_end': 0.0,
+        'nt_mid': 0.5,
+        'pt_mid': 0.5,
+        'pt_end': 0.0
+    },
+    "m4": {
+        'num': 4,
+        'np_mid': 1.0,
+        'np_ini': 0.5,
+        'pp_ini': 0.5,
+        'pp_mid': 1.0,
+        'nt_end': 0.0,
+        'nt_mid': 0.5,
+        'pt_mid': 0.5,
+        'pt_end': 0.0
+    },
+    "m5": {
+        'num': 5,
+        'np_mid': 1.0,
+        'np_ini': 0.5,
+        'pp_ini': 0.5,
+        'pp_mid': 1.0,
+        'nt_end': 0.0,
+        'nt_mid': 0.5,
+        'pt_mid': 0.5,
+        'pt_end': 0.0
+    }
+}
+
 # 硬件控制类（通过UDP协议发送数据）
 class HardwareController:
     def __init__(self, server_address):
         self.server_address = server_address
         self.curves = type('', (), {})()  # 动态创建曲线数据对象
         
-        # 初始化电机参数（示例值，需根据实际硬件调整）
-        motors = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5']
-        default_values = {
-            'num': 0, 'np_mid': 1.0, 'np_ini': 0.5, 'pp_ini': 0.5,
-            'pp_mid': 1.0, 'nt_end': 0.0, 'nt_mid': 0.5,
-            'pt_mid': 0.5, 'pt_end': 0.0
-        }
-        
-        for i, motor in enumerate(motors):
-            values = default_values.copy()
-            values['num'] = i  # 电机编号
-            setattr(self.curves, motor, type('', (), values)())
-
     def send_thrust_data(self, motor_name, client_socket):
-        """发送单个电机的推力参数到网络"""
-        motor = getattr(self.curves, motor_name)
-        data = {
-            "cmd": "thrust_init",
-            "motor": motor.num,
-            "np_mid": motor.np_mid,
-            "np_ini": motor.np_ini,
-            "pp_ini": motor.pp_ini,
-            "pp_mid": motor.pp_mid,
-            "nt_end": motor.nt_end,
-            "nt_mid": motor.nt_mid,
-            "pt_mid": motor.pt_mid,
-            "pt_end": motor.pt_end
-        }
-        json_str = json.dumps(data) + "\n"
-        client_socket.sendto(json_str.encode(), self.server_address)
-
+            """发送单个电机的推力参数到网络"""
+            if motor_name in MOTOR_PARAMS:
+                data = {
+                    "cmd": "thrust_init",
+                    "motor": MOTOR_PARAMS[motor_name]['num'],
+                    "np_mid": MOTOR_PARAMS[motor_name]['np_mid'],
+                    "np_ini": MOTOR_PARAMS[motor_name]['np_ini'],
+                    "pp_ini": MOTOR_PARAMS[motor_name]['pp_ini'],
+                    "pp_mid": MOTOR_PARAMS[motor_name]['pp_mid'],
+                    "nt_end": MOTOR_PARAMS[motor_name]['nt_end'],
+                    "nt_mid": MOTOR_PARAMS[motor_name]['nt_mid'],
+                    "pt_mid": MOTOR_PARAMS[motor_name]['pt_mid'],
+                    "pt_end": MOTOR_PARAMS[motor_name]['pt_end']
+                }
+                json_str = json.dumps(data) + "\n"
+                client_socket.sendto(json_str.encode(), self.server_address)
     def hwinit(self, client_socket):
         """初始化所有电机参数"""
         for motor_name in ["m0", "m1", "m2", "m3", "m4", "m5"]:
@@ -284,7 +340,8 @@ def joy_controller_callback(monitor):
 
 
 if __name__ == "__main__":
-    count = 0
+    joy_data_count = 0  # 初始化计数器
+    
     # 串口参数
     
     # serial_port = 'COM15'  # 根据实际情况更改串口号
@@ -319,7 +376,10 @@ if __name__ == "__main__":
     # 启动线程
     thread_joy_controller.start()
     running=True
-
+    # 启动时发送5次推力参数
+    for _ in range(10):
+        hw_controller.hwinit(client_socket)
+        time.sleep(0.03)  # 控制发送频率
     while running:
 
         if monitor.stop == True:
@@ -329,15 +389,20 @@ if __name__ == "__main__":
 
         time.sleep(0.05)
         #time.sleep(2)
-        
+        # 每发送10次摇杆数据，发送一次推力参数
+        # if joy_data_count >= 100:
+        #     hw_controller.hwinit(client_socket)
+        #     joy_data_count = 0  # 重置计数器
+        # else:
+        #     joy_data_count += 1  # 增加计数器
+
         msg = json.dumps(monitor.controller) # 使用json传输数据，这里是将python的字典格式转为json字符串的形式的操作
         client_socket.sendto((msg + '\n').encode(), server_address)
         # ser.write((msg + '\n').encode())  # 向串口发送 JSON + 换行符
-        # 添加计数器逻辑
-        count += 1
-        if count % 10 in [1, 5]:
-            hw_controller.hwinit(client_socket)  # 初始化所有电机参数
-        
+        # # 添加计数器逻辑
+        # for _ in range(3):
+        #     hw_controller.hwinit(client_socket)
+        #     time.sleep(0.05)  # 控制发送频率
         localdata = monitor.controller.copy()
         localdata["mode"] = mild_mode
         

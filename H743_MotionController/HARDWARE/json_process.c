@@ -17,7 +17,7 @@ int bbb=0;
 JSON_Command_t command = {0};
 
 /* 私有变量 */
-static uint8_t rx_buffer[512];
+static uint8_t rx_buffer[1024];
 static uint16_t rx_index = 0;
 static uint8_t rx_char;
 
@@ -98,12 +98,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         // 检查帧尾（换行符作为结束）
         else if (uart8rec.buf[uart8rec.cnt] == '\n' && uart8rec.cnt > 0)
         {
-            printf("RX JSON: %s\n", uart8rec.buf);
+            // printf("RX JSON: %s\n", uart8rec.buf);
             uart8rec.buf[uart8rec.cnt] = '\0'; // 确保字符串终止
             JSON_Process_Data((uint8_t *)uart8rec.buf);
-            uart8rec.cnt = 501; // 使缓冲计数归零
+            uart8rec.cnt = 1001; // 使缓冲计数归零
         }
-        if (uart8rec.cnt >= 500)// 防止缓冲区溢出
+        if (uart8rec.cnt >= 1000)// 防止缓冲区溢出
             uart8rec.cnt = 0; 
         else
             uart8rec.cnt++;
@@ -205,15 +205,15 @@ static void parse_json_data(uint8_t *json_str)
   // {
   //   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_RESET);
   // }
-//   printf("x: %.2f  ",openloop_thrust[0]);
-//   printf("y: %.2f  ",openloop_thrust[1]);
-//   printf("z: %.2f  ",openloop_thrust[2]);
-//   printf("yaw: %.2f  ",openloop_thrust[4]);
+  printf("x: %.2f  ",openloop_thrust[0]);
+  printf("y: %.2f  ",openloop_thrust[1]);
+  printf("z: %.2f  ",openloop_thrust[2]);
+  printf("yaw: %.2f  ",openloop_thrust[4]);
   printf("servo0: %.3f\r\n",servo0angle);
   bbb++;
-  if (bbb == 5)
+  if (bbb == 20)
   {
-      print_thrust_params();bbb++;
+      print_thrust_params();bbb=0;
     /* code */
   }
 //   print_thrust_params();
