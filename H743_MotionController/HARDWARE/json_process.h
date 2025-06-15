@@ -4,13 +4,6 @@
 #include "cJSON.h"
 #include "main.h"
 
-// typedef struct {
-//   uint8_t          buf[512];      // 接收数据缓存数组
-//   volatile uint8_t rx_len;        // 接收一帧数据的长度
-//   volatile uint8_t recv_end_flag; // 一帧数据接收完成标志
-//   int              cnt;
-// } RecBuf;
-
 // 定义电机参数结构体
 typedef struct {
     int motor_num;

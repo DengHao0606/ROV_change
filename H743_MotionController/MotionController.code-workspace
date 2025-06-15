@@ -10,7 +10,10 @@
             "math.h": "c",
             "usart.h": "c",
             "main.h": "c",
-            "comm.h": "c"
+            "comm.h": "c",
+            "autocontrol.h": "c",
+            "string.h": "c",
+            "cstdint": "c"
         }
     },
     "extensions": {}

@@ -73,6 +73,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define GT_TX_Pin GPIO_PIN_14
+#define GT_TX_GPIO_Port GPIOB
+#define GT_RX_Pin GPIO_PIN_15
+#define GT_RX_GPIO_Port GPIOB
 #define LED0_H7_Pin GPIO_PIN_6
 #define LED0_H7_GPIO_Port GPIOD
 #define LED1_H7_Pin GPIO_PIN_7

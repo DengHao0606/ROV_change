@@ -66,69 +66,75 @@ import pygame   #与游戏手柄进行一个交互的pygame模块，下面有个
 MOTOR_PARAMS = {
     "m0": {
         'num': 0,
-        'np_mid': 1.0,
-        'np_ini': 0.5,
-        'pp_ini': 0.5,
-        'pp_mid': 1.0,
-        'nt_end': 0.0,
-        'nt_mid': 0.5,
-        'pt_mid': 0.5,
-        'pt_end': 0.0
+        "np_mid": 2500.0,
+        "np_ini": 3000.0,
+        "pp_ini": 3000.0,
+        "pp_mid": 3500.0,
+
+        "nt_end": -1500.0,
+        "nt_mid": -750.0,
+        "pt_mid": 750.0,
+        "pt_end": 1500.0,
     },
     "m1": {
         'num': 1,
-        'np_mid': 1.0,
-        'np_ini': 0.5,
-        'pp_ini': 0.5,
-        'pp_mid': 1.0,
-        'nt_end': 0.0,
-        'nt_mid': 0.5,
-        'pt_mid': 0.5,
-        'pt_end': 0.0
+        "np_mid": 2500.0,
+        "np_ini": 3000.0,
+        "pp_ini": 3000.0,
+        "pp_mid": 3500.0,
+
+        "nt_end": -1500.0,
+        "nt_mid": -750.0,
+        "pt_mid": 750.0,
+        "pt_end": 1500.0,
     },
     "m2": {
         'num': 2,
-        'np_mid': 1.0,
-        'np_ini': 0.5,
-        'pp_ini': 0.5,
-        'pp_mid': 1.0,
-        'nt_end': 0.0,
-        'nt_mid': 0.5,
-        'pt_mid': 0.5,
-        'pt_end': 0.0
+        "np_mid": 2500.0,
+        "np_ini": 3000.0,
+        "pp_ini": 3000.0,
+        "pp_mid": 3500.0,
+
+        "nt_end": -1500.0,
+        "nt_mid": -750.0,
+        "pt_mid": 750.0,
+        "pt_end": 1500.0,
     },
     "m3": {
         'num': 3,
-        'np_mid': 1.0,
-        'np_ini': 0.5,
-        'pp_ini': 0.5,
-        'pp_mid': 1.0,
-        'nt_end': 0.0,
-        'nt_mid': 0.5,
-        'pt_mid': 0.5,
-        'pt_end': 0.0
+        "np_mid": 2500.0,
+        "np_ini": 3000.0,
+        "pp_ini": 3000.0,
+        "pp_mid": 3500.0,
+
+        "nt_end": -1500.0,
+        "nt_mid": -750.0,
+        "pt_mid": 750.0,
+        "pt_end": 1500.0,
     },
     "m4": {
         'num': 4,
-        'np_mid': 1.0,
-        'np_ini': 0.5,
-        'pp_ini': 0.5,
-        'pp_mid': 1.0,
-        'nt_end': 0.0,
-        'nt_mid': 0.5,
-        'pt_mid': 0.5,
-        'pt_end': 0.0
+        "np_mid": 2500.0,
+        "np_ini": 3000.0,
+        "pp_ini": 3000.0,
+        "pp_mid": 3500.0,
+
+        "nt_end": -1500.0,
+        "nt_mid": -750.0,
+        "pt_mid": 750.0,
+        "pt_end": 1500.0,
     },
     "m5": {
         'num': 5,
-        'np_mid': 1.0,
-        'np_ini': 0.5,
-        'pp_ini': 0.5,
-        'pp_mid': 1.0,
-        'nt_end': 0.0,
-        'nt_mid': 0.5,
-        'pt_mid': 0.5,
-        'pt_end': 0.0
+        "np_mid": 2500.0,
+        "np_ini": 3000.0,
+        "pp_ini": 3000.0,
+        "pp_mid": 3500.0,
+
+        "nt_end": -1500.0,
+        "nt_mid": -750.0,
+        "pt_mid": 750.0,
+        "pt_end": 1500.0,
     }
 }
 
@@ -138,6 +144,37 @@ class HardwareController:
         self.server_address = server_address
         self.curves = type('', (), {})()  # 动态创建曲线数据对象
         
+        # # 初始化电机参数（示例值，需根据实际硬件调整）
+        # motors = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5']
+        # default_values = {
+        #     'num': 0, 'np_mid': 1.0, 'np_ini': 0.5, 'pp_ini': 0.5,
+        #     'pp_mid': 1.0, 'nt_end': 0.0, 'nt_mid': 0.5,
+        #     'pt_mid': 0.5, 'pt_end': 0.0
+        # }
+        
+        # for i, motor in enumerate(motors):
+        #     values = default_values.copy()
+        #     values['num'] = i  # 电机编号
+        #     setattr(self.curves, motor, type('', (), values)())
+
+    # def send_thrust_data(self, motor_name, client_socket):
+    #     """发送单个电机的推力参数到网络"""
+    #     motor = getattr(self.curves, motor_name)
+    #     data = {
+    #         "cmd": "thrust_init",
+    #         "motor": motor.num,
+    #         "np_mid": motor.np_mid,
+    #         "np_ini": motor.np_ini,
+    #         "pp_ini": motor.pp_ini,
+    #         "pp_mid": motor.pp_mid,
+    #         "nt_end": motor.nt_end,
+    #         "nt_mid": motor.nt_mid,
+    #         "pt_mid": motor.pt_mid,
+    #         "pt_end": motor.pt_end
+    #     }
+    #     json_str = json.dumps(data) + "\n"
+    #     client_socket.sendto(json_str.encode(), self.server_address)
+
     def send_thrust_data(self, motor_name, client_socket):
             """发送单个电机的推力参数到网络"""
             if motor_name in MOTOR_PARAMS:
@@ -379,7 +416,7 @@ if __name__ == "__main__":
     # 启动时发送5次推力参数
     for _ in range(10):
         hw_controller.hwinit(client_socket)
-        time.sleep(0.03)  # 控制发送频率
+        time.sleep(0.05)  # 控制发送频率
     while running:
 
         if monitor.stop == True:

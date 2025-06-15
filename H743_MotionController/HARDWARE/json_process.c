@@ -1,7 +1,6 @@
 #include "json_process.h"
 #include "comm.h"
 
-#include "main.h"
 #include "usart.h"
 #include "tim.h"
 
@@ -10,7 +9,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-RecBuf uart8rec = {0};
+
 float servo0angle = 0.0;
 extern int threadmonitor_uart8;
 int bbb=0;
@@ -56,13 +55,13 @@ static void print_thrust_params(void)
  * 备注  : 调用HAL_UART_Receive_IT函数启动串口接收中断，将接收缓冲区rx_buffer清零，并重置接收索引rx_index，
  *         同时打印初始化成功的提示信息。
  */
-void JSON_Process_Init(void) 
-{
-    HAL_UART_Receive_IT(&huart8, &rx_char, 1);  // 启动接收中断
-    memset(rx_buffer, 0, sizeof(rx_buffer));
-    rx_index = 0;
-    // HAL_Delay(100); // 稍作延迟防止无法进入中断
-}
+// void JSON_Process_Init(void) 
+// {
+//     HAL_UART_Receive_IT(&huart1, &rx_char, 1);  // 启动接收中断
+//     memset(rx_buffer, 0, sizeof(rx_buffer));
+//     rx_index = 0;
+//     HAL_Delay(100); // 稍作延迟防止无法进入中断
+// }
 
 /*
  * 函数名: JSON_Process_Data
@@ -86,32 +85,30 @@ void JSON_Process_Data(uint8_t *json_str)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) 
 {
     // 串口接收控制指令
-    if (huart == &huart8) 
+    if (huart == &huart1) 
     {
         threadmonitor_uart8 = 200;
-        if (uart8rec.buf[uart8rec.cnt - 1] == '{' && uart8rec.buf[uart8rec.cnt] == '\"' && uart8rec.cnt > 0)
+        if (uart1rec.buf[uart1rec.cnt - 1] == '{' && uart1rec.buf[uart1rec.cnt] == '\"' && uart1rec.cnt > 0)
         {
-            uart8rec.cnt = 1;
-            uart8rec.buf[0] = '{';
-            uart8rec.buf[1] = '\"';
+            uart1rec.cnt = 1;
+            uart1rec.buf[0] = '{';
+            uart1rec.buf[1] = '\"';
         }
         // 检查帧尾（换行符作为结束）
-        else if (uart8rec.buf[uart8rec.cnt] == '\n' && uart8rec.cnt > 0)
+        else if (uart1rec.buf[uart1rec.cnt] == '\n' && uart1rec.cnt > 0)
         {
-            // printf("RX JSON: %s\n", uart8rec.buf);
-            uart8rec.buf[uart8rec.cnt] = '\0'; // 确保字符串终止
-            JSON_Process_Data((uint8_t *)uart8rec.buf);
-            uart8rec.cnt = 1001; // 使缓冲计数归零
+            uart1rec.buf[uart1rec.cnt] = '\0'; // 确保字符串终止
+            JSON_Process_Data((uint8_t *)uart1rec.buf);
+            uart1rec.cnt = 1001; // 使缓冲计数归零
         }
-        if (uart8rec.cnt >= 1000)// 防止缓冲区溢出
-            uart8rec.cnt = 0; 
+        if (uart1rec.cnt >= 1000)// 防止缓冲区溢出
+            uart1rec.cnt = 0; 
         else
-            uart8rec.cnt++;
+            uart1rec.cnt++;
         
-        HAL_UART_Receive_IT(&huart8, uart8rec.buf + uart8rec.cnt, 1);
+        HAL_UART_Receive_IT(&huart1, uart1rec.buf + uart1rec.cnt, 1);
     }
 }
-
 /*
  * 函数名: parse_json_data
  * 描述  : 解析接收到的JSON数据，提取其中的字段并打印解析结果，调用时先在启动文件里修改Heap_Size
@@ -128,13 +125,9 @@ static void parse_json_data(uint8_t *json_str)
       if (error_ptr != NULL) 
       {
           printf("Error before: %s\n", error_ptr);
-      }
-      // printf("Error\r\n");
+      }  
       return;
   }
-
-  /* 提取各字段 */
-
 
   cJSON *x_item = cJSON_GetObjectItem(root, "x");
     if  (x_item) command.x = x_item->valuedouble;
@@ -184,27 +177,18 @@ static void parse_json_data(uint8_t *json_str)
         int motor_num = cJSON_GetObjectItem(root, "motor")->valueint;
         parse_thrust_params(root, motor_num);
     } 
-    else 
-    {
+    // else 
+    // {
         // 格式2: {"m0":{"np_mid":1.0...}, ...}
-        for (int i = 0; i < 6; i++)
-        {
-            char motor_name[5];
-            sprintf(motor_name, "m%d", i);
-            cJSON *motor_item = cJSON_GetObjectItem(root, motor_name);
-            if (motor_item) parse_thrust_params(motor_item, i);
-            printf("");
-        }
-    }
-  // /* 打印解析结果 */
-  // if(servo0angle > 0.5)
-  // {
-  //   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_SET);
-  // }
-  // else
-  // {
-  //   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_RESET);
-  // }
+    //     for (int i = 0; i < 6; i++)
+    //     {
+    //         char motor_name[5];
+    //         sprintf(motor_name, "m%d", i);
+    //         cJSON *motor_item = cJSON_GetObjectItem(root, motor_name);
+    //         if (motor_item) parse_thrust_params(motor_item, i);
+    //         printf("");
+    //     }
+    // }
   printf("x: %.2f  ",openloop_thrust[0]);
   printf("y: %.2f  ",openloop_thrust[1]);
   printf("z: %.2f  ",openloop_thrust[2]);
@@ -214,9 +198,7 @@ static void parse_json_data(uint8_t *json_str)
   if (bbb == 20)
   {
       print_thrust_params();bbb=0;
-    /* code */
   }
-//   print_thrust_params();
   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_7);
   cJSON_Delete(root);
 }
@@ -257,3 +239,33 @@ static void parse_thrust_params(cJSON *motor_item, int motor_num)
     if ((item = cJSON_GetObjectItem(motor_item, "pt_end"))) 
         motor->pt_end = item->valuedouble;
 }
+
+
+// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) 
+// {
+//     // 串口接收控制指令
+//     if (huart == &huart8) 
+//     {
+//         threadmonitor_uart8 = 200;
+//         if (uart8rec.buf[uart8rec.cnt - 1] == '{' && uart8rec.buf[uart8rec.cnt] == '\"' && uart8rec.cnt > 0)
+//         {
+//             uart8rec.cnt = 1;
+//             uart8rec.buf[0] = '{';
+//             uart8rec.buf[1] = '\"';
+//         }
+//         // 检查帧尾（换行符作为结束）
+//         else if (uart8rec.buf[uart8rec.cnt] == '\n' && uart8rec.cnt > 0)
+//         {
+//             // printf("RX JSON: %s\n", uart8rec.buf);
+//             uart8rec.buf[uart8rec.cnt] = '\0'; // 确保字符串终止
+//             JSON_Process_Data((uint8_t *)uart8rec.buf);
+//             uart8rec.cnt = 1001; // 使缓冲计数归零
+//         }
+//         if (uart8rec.cnt >= 1000)// 防止缓冲区溢出
+//             uart8rec.cnt = 0; 
+//         else
+//             uart8rec.cnt++;
+        
+//         HAL_UART_Receive_IT(&huart8, uart8rec.buf + uart8rec.cnt, 1);
+//     }
+// }

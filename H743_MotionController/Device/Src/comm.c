@@ -7,8 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+RecBuf uart1rec = {0};
 RecBuf uart4rec = {0};
 RecBuf uart7rec = {0};
+RecBuf uart8rec = {0};
+
 
 uint8_t dvlstate = 0;
 
@@ -21,45 +24,6 @@ extern float checkeddepth;
 extern CoordinateSystems target;
 
 
-// /*
-//  * 函数名: imu_setmode
-//  * 描述  : 设置室内导航模式
-//  * 输入  : /
-//  * 输出  : /
-//  * 备注  : /
-//  */
-// void imu_setmode(UART_HandleTypeDef *huart)
-// {
-//     uint8_t BUFIMUSETMODE[14] = {0xFC, 0xCF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
-//     HAL_UART_Transmit(huart, BUFIMUSETMODE, 14, 10); // 设置室内导航模式
-// }
-
-// /*
-//  * 函数名: dvl_shutdown
-//  * 描述  : 关闭Dvl
-//  * 输入  : /
-//  * 输出  : /
-//  * 备注  : /
-//  */
-// void dvl_shutdown(UART_HandleTypeDef *huart)
-// {
-//     uint8_t BUFDVLSHUTDOWN[14] = {0xFC, 0xCF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0xFD, 0xDF};
-//     HAL_UART_Transmit(huart, BUFDVLSHUTDOWN, 14, 10); // 关闭DVL
-// }
-
-// /*
-//  * 函数名: dvl_startup
-//  * 描述  : 开启Dvl
-//  * 输入  : /
-//  * 输出  : /
-//  * 备注  : /
-//  */
-// void dvl_startup(UART_HandleTypeDef *huart)
-// {
-//     uint8_t BUFDVLPOWERON[14] = {0xFC, 0xCF, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
-//     HAL_UART_Transmit(huart, BUFDVLPOWERON, 14, 10); // 关闭DVL
-// }
-
 /*
  * 函数名: CommInit
  * 描述  : 串口通信初始化
@@ -69,6 +33,7 @@ extern CoordinateSystems target;
  */
 void CommInit(void)
 {
+    uart1rec.cnt = 0;
     uart7rec.cnt = 0;
     uart8rec.cnt = 0;
 
@@ -80,9 +45,9 @@ void CommInit(void)
     // huart7.RxState = HAL_UART_STATE_READY;
     // huart7.Lock    = HAL_UNLOCKED;
 
-    HAL_UART_Receive_IT(&huart8, uart4rec.buf, 1);
+    HAL_UART_Receive_IT(&huart1, uart1rec.buf, 1);
     HAL_UART_Receive_IT(&huart7, uart7rec.buf, 1);
-
+    HAL_UART_Receive_IT(&huart8, uart4rec.buf, 1);
 
     HAL_Delay(100); // 稍作延迟防止无法进入中断
 }
@@ -334,3 +299,43 @@ void CommInit(void)
 //         HAL_UART_Receive_IT(&huart7, uart7rec.buf + uart7rec.cnt, 1);
 //     }
 // }
+
+// /*
+//  * 函数名: imu_setmode
+//  * 描述  : 设置室内导航模式
+//  * 输入  : /
+//  * 输出  : /
+//  * 备注  : /
+//  */
+// void imu_setmode(UART_HandleTypeDef *huart)
+// {
+//     uint8_t BUFIMUSETMODE[14] = {0xFC, 0xCF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
+//     HAL_UART_Transmit(huart, BUFIMUSETMODE, 14, 10); // 设置室内导航模式
+// }
+
+// /*
+//  * 函数名: dvl_shutdown
+//  * 描述  : 关闭Dvl
+//  * 输入  : /
+//  * 输出  : /
+//  * 备注  : /
+//  */
+// void dvl_shutdown(UART_HandleTypeDef *huart)
+// {
+//     uint8_t BUFDVLSHUTDOWN[14] = {0xFC, 0xCF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0xFD, 0xDF};
+//     HAL_UART_Transmit(huart, BUFDVLSHUTDOWN, 14, 10); // 关闭DVL
+// }
+
+// /*
+//  * 函数名: dvl_startup
+//  * 描述  : 开启Dvl
+//  * 输入  : /
+//  * 输出  : /
+//  * 备注  : /
+//  */
+// void dvl_startup(UART_HandleTypeDef *huart)
+// {
+//     uint8_t BUFDVLPOWERON[14] = {0xFC, 0xCF, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
+//     HAL_UART_Transmit(huart, BUFDVLPOWERON, 14, 10); // 关闭DVL
+// }
+

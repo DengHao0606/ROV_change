@@ -26,6 +26,7 @@ typedef struct {
 extern uint8_t dvlstate;
 extern IMU imu;
 
+extern RecBuf uart1rec;
 extern RecBuf uart4rec;
 extern RecBuf uart7rec;
 extern RecBuf uart8rec;

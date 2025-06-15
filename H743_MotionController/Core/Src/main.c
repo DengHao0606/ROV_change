@@ -69,8 +69,8 @@ float Vx = 0, Vy = 0, Ry = 0, Tx = 0, Ty = 0, Tz = 0, Mx = 0, My = 0, Mz = 0;
 
 CoordinateSystems robot_pos; // 真实的机器人
 
-CoordinateSystems robot_im_pos;    // 假的水平的机器人,用于计算机器人水平位置误�?????????
-CoordinateSystems robot_im_spd;    // 速度空间中的机器�?????????,用于计算机器人水平横移�?�前进�?�度
+CoordinateSystems robot_im_pos;    // 假的水平的机器人,用于计算机器人水平位置误�?????????
+CoordinateSystems robot_im_spd;    // 速度空间中的机器�?????????,用于计算机器人水平横移�?�前进�?�度
 CoordinateSystems robot_im_thrust; // 推力空间中的的机器人,用于计算推力
 CoordinateVector  required_thrust = {0, 0, 0, 0, 0, 0};
 
@@ -119,9 +119,9 @@ int fputc(int ch,FILE *f)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /*
- * 函数�????????????????: HAL_TIM_PeriodElapsedCallback
- * 描述  : 定时器中断处�????????????????
- * 输入  : TIM_HandleTypeDef *htim 定时器地�????????????????
+ * 函数�????????????????: HAL_TIM_PeriodElapsedCallback
+ * 描述  : 定时器中断处�????????????????
+ * 输入  : TIM_HandleTypeDef *htim 定时器地�????????????????
  * 输出  : /
  * 备注  : 用于处理数据
  */
@@ -161,10 +161,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // }
         if (threadmonitor_uart8 <= 0)
         {
-            MX_UART8_Init();
-            JSON_Process_Init();//防止卡死
-            HAL_UART_Receive_IT(&huart8, uart8rec.buf + uart8rec.cnt, 1);
-            threadmonitor_uart8 = 50;
+            // MX_UART8_Init();
+            // JSON_Process_Init();//防止卡死
+            // HAL_UART_Receive_IT(&huart8, uart8rec.buf + uart8rec.cnt, 1);
+            // threadmonitor_uart8 = 50;
         }
         // led
         // if (led_watchdog)
@@ -219,8 +219,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // // Cs transform
         // robot.world2base(&robot);
 
-        // // 计算各控制器�?????????�?????????测量值与误差值DF
-        // // 机器人坐�?????????
+        // // 计算各控制器�?????????�?????????测量值与误差值DF
+        // // 机器人坐�?????????
         // robot_im_pos.base.vector.x = robot_pos.base.vector.x = imu.pos.x;
         // robot_im_pos.base.vector.y = robot_pos.base.vector.y = imu.pos.y;
         // robot_im_pos.base.vector.z = robot_pos.base.vector.z = imu.pos.z;
@@ -255,7 +255,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // robot_im_spd.target_inbase.extract(&(robot_im_spd.target_inbase));
         // robot_im_spd.base2world(&robot_im_spd);
 
-        // // 计算机器人参考系中的水平误差（横向与前向�?????????
+        // // 计算机器人参考系中的水平误差（横向与前向�?????????
         // robot_im_pos.world2base(&robot_im_pos);
 
 
@@ -386,11 +386,12 @@ int main(void)
   MX_TIM4_Init();
   MX_FDCAN1_Init();
   MX_TIM5_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 // uart it start
   CommInit();
   FDCAN1_Config();
-  JSON_Process_Init();
+  // JSON_Process_Init();
 
   // motor init
   MotorInit();
@@ -438,8 +439,9 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim1);
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
-
-  printf("H743 Ready\r\n");
+  uint8_t txbit[] = "hello world\r\n";
+  HAL_UART_Transmit_IT(&huart1,txbit, 13);
+  // printf("H743 Ready\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -447,7 +449,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+    HAL_UART_Transmit_IT(&huart1,txbit, 13);
+        HAL_Delay(500);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
