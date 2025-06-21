@@ -1,5 +1,7 @@
 #include "json_process.h"
 #include "comm.h"
+#include "motor.h"
+#include "RS485_process.h"
 
 #include "usart.h"
 #include "tim.h"
@@ -9,20 +11,28 @@
 #include <stdlib.h>
 #include <math.h>
 
-
+#pragma pack(push, 1) // 确保1字节对齐
+typedef struct {
+    uint8_t header[2];    // 包头标识 0xAA 0x55
+    uint8_t motor_num;    // 电机编号(0-5)
+    float pwm[4];         // PWM关键点
+    float thrust[4];      // 推力关键点
+    uint16_t checksum;    // 校验和
+} ThrustCurvePacket_t;
+#pragma pack(pop) // 恢复默认对齐
 float servo0angle = 0.0;
 extern int threadmonitor_uart8;
 int bbb=0;
 JSON_Command_t command = {0};
 
-/* 私有变量 */
-static uint8_t rx_buffer[1024];
-static uint16_t rx_index = 0;
-static uint8_t rx_char;
-
 /* 私有函数 */
 static void parse_json_data(uint8_t *json_str);
 static void apply_motor_control(void);
+
+// 在json_process.h中添加声明
+
+
+
 
 /**
   * @brief  打印当前所有电机的推力参数
@@ -48,22 +58,6 @@ static void print_thrust_params(void)
 }
 
 /*
- * 函数名: JSON_Process_Init
- * 描述  : 初始化JSON处理器，启动串口接收中断，并初始化接收缓冲区
- * 输入  : 无
- * 输出  : 无
- * 备注  : 调用HAL_UART_Receive_IT函数启动串口接收中断，将接收缓冲区rx_buffer清零，并重置接收索引rx_index，
- *         同时打印初始化成功的提示信息。
- */
-// void JSON_Process_Init(void) 
-// {
-//     HAL_UART_Receive_IT(&huart1, &rx_char, 1);  // 启动接收中断
-//     memset(rx_buffer, 0, sizeof(rx_buffer));
-//     rx_index = 0;
-//     HAL_Delay(100); // 稍作延迟防止无法进入中断
-// }
-
-/*
  * 函数名: JSON_Process_Data
  * 描述  : 处理接收到的JSON数据，调用parse_json_data函数进行解析
  * 输入  : json_str - 指向接收到的JSON数据的指针
@@ -75,40 +69,6 @@ void JSON_Process_Data(uint8_t *json_str)
     parse_json_data(json_str);
 }
 
-/*
- * 函数名: HAL_UART_RxCpltCallback
- * 描述  : 串口中断处理
- * 输入  : UART_HandleTypeDef *huart 串口地址
- * 输出  : /
- * 备注  : /
- */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) 
-{
-    // 串口接收控制指令
-    if (huart == &huart1) 
-    {
-        threadmonitor_uart8 = 200;
-        if (uart1rec.buf[uart1rec.cnt - 1] == '{' && uart1rec.buf[uart1rec.cnt] == '\"' && uart1rec.cnt > 0)
-        {
-            uart1rec.cnt = 1;
-            uart1rec.buf[0] = '{';
-            uart1rec.buf[1] = '\"';
-        }
-        // 检查帧尾（换行符作为结束）
-        else if (uart1rec.buf[uart1rec.cnt] == '\n' && uart1rec.cnt > 0)
-        {
-            uart1rec.buf[uart1rec.cnt] = '\0'; // 确保字符串终止
-            JSON_Process_Data((uint8_t *)uart1rec.buf);
-            uart1rec.cnt = 1001; // 使缓冲计数归零
-        }
-        if (uart1rec.cnt >= 1000)// 防止缓冲区溢出
-            uart1rec.cnt = 0; 
-        else
-            uart1rec.cnt++;
-        
-        HAL_UART_Receive_IT(&huart1, uart1rec.buf + uart1rec.cnt, 1);
-    }
-}
 /*
  * 函数名: parse_json_data
  * 描述  : 解析接收到的JSON数据，提取其中的字段并打印解析结果，调用时先在启动文件里修改Heap_Size
@@ -140,11 +100,9 @@ static void parse_json_data(uint8_t *json_str)
 
   cJSON *yaw_item = cJSON_GetObjectItem(root, "yaw");
     if  (yaw_item) command.yaw = yaw_item->valuedouble;
-
+    // 解析舵机角度
   cJSON *servo0_item = cJSON_GetObjectItem(root, "servo0");
-    if  (servo0_item) command.servo0 = servo0_item->valuedouble;
-
-
+    if (servo0_item) command.servo0 = servo0_item->valuedouble;
 
     openloop_thrust[0] = command.x;
     openloop_thrust[1] = command.y;
@@ -154,57 +112,24 @@ static void parse_json_data(uint8_t *json_str)
     openloop_thrust[5] = command.pitch;
 
     servo0angle = command.servo0;
-
-
-  /* 不需要解析 */
-  // cJSON *roll_item = cJSON_GetObjectItem(root, "roll");
-  //   if  (roll_item) command.roll = roll_item->valuedouble;
-
-  // cJSON *pitch_item = cJSON_GetObjectItem(root, "pitch");
-  //   if  (pitch_item) command.pitch = pitch_item->valuedouble;
-
-  // cJSON *servo1_item = cJSON_GetObjectItem(root, "servo1");
-  //   if  (servo1_item) command.servo1 = servo1_item->valuedouble;
-
-  // cJSON *state_item = cJSON_GetObjectItem(root, "state");
-  //   if  (state_item) command.state = state_item->valueint;
-
-/* 电机参数解析（两种格式兼容） */
+    
+    /* 电机参数解析 */
     cJSON *cmd_item = cJSON_GetObjectItem(root, "cmd");
     if (cmd_item && strcmp(cmd_item->valuestring, "thrust_init") == 0)
     {
         // 格式1: {"cmd":"thrust_init", "motor":0, "np_mid":1.0...}
         int motor_num = cJSON_GetObjectItem(root, "motor")->valueint;
         parse_thrust_params(root, motor_num);
+        apply_thrust_params_to_curve(motor_num);  // 新增这行
     } 
-    // else 
-    // {
-        // 格式2: {"m0":{"np_mid":1.0...}, ...}
-    //     for (int i = 0; i < 6; i++)
-    //     {
-    //         char motor_name[5];
-    //         sprintf(motor_name, "m%d", i);
-    //         cJSON *motor_item = cJSON_GetObjectItem(root, motor_name);
-    //         if (motor_item) parse_thrust_params(motor_item, i);
-    //         printf("");
-    //     }
-    // }
-  printf("x: %.2f  ",openloop_thrust[0]);
-  printf("y: %.2f  ",openloop_thrust[1]);
-  printf("z: %.2f  ",openloop_thrust[2]);
-  printf("yaw: %.2f  ",openloop_thrust[4]);
-  printf("servo0: %.3f\r\n",servo0angle);
-  bbb++;
-  if (bbb == 20)
-  {
-      print_thrust_params();bbb=0;
-  }
-  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_7);
-  cJSON_Delete(root);
+    
+//   HAL_UART_Transmit_IT(&huart1,(uint16_t)&servo0angle, 1);//调试用
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_7);
+    cJSON_Delete(root);
 }
 
 /**
-  * @brief  仅提取电机推力参数（不做任何校验和额外操作）
+  * @brief  仅提取电机推力参数
   * @param  motor_item: cJSON对象指针
   * @param  motor_num: 电机编号(0-5)
   * @retval None
@@ -240,32 +165,44 @@ static void parse_thrust_params(cJSON *motor_item, int motor_num)
         motor->pt_end = item->valuedouble;
 }
 
+void apply_thrust_params_to_curve(int motor_num) 
+{
+    if (motor_num < 0 || motor_num >= 6) return;
+    
+    MotorParams_t *motor = &command.motors[motor_num];
+    ThrustCurve *curve = &thrustcurve[motor_num];
+    
+    // 映射PWM参数
+    curve->pwm[0] = motor->np_mid;
+    curve->pwm[1] = motor->np_ini;
+    curve->pwm[2] = motor->pp_ini;
+    curve->pwm[3] = motor->pp_mid;
+    
+    // 映射推力参数
+    curve->thrust[0] = motor->nt_end;
+    curve->thrust[1] = motor->nt_mid;
+    curve->thrust[2] = motor->pt_mid;
+    curve->thrust[3] = motor->pt_end;
+    
+    // 上传更新后的曲线数据(二进制格式)
+    // send_thrust_curve_simple(motor_num);
+}
 
-// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) 
-// {
-//     // 串口接收控制指令
-//     if (huart == &huart8) 
-//     {
-//         threadmonitor_uart8 = 200;
-//         if (uart8rec.buf[uart8rec.cnt - 1] == '{' && uart8rec.buf[uart8rec.cnt] == '\"' && uart8rec.cnt > 0)
-//         {
-//             uart8rec.cnt = 1;
-//             uart8rec.buf[0] = '{';
-//             uart8rec.buf[1] = '\"';
-//         }
-//         // 检查帧尾（换行符作为结束）
-//         else if (uart8rec.buf[uart8rec.cnt] == '\n' && uart8rec.cnt > 0)
-//         {
-//             // printf("RX JSON: %s\n", uart8rec.buf);
-//             uart8rec.buf[uart8rec.cnt] = '\0'; // 确保字符串终止
-//             JSON_Process_Data((uint8_t *)uart8rec.buf);
-//             uart8rec.cnt = 1001; // 使缓冲计数归零
-//         }
-//         if (uart8rec.cnt >= 1000)// 防止缓冲区溢出
-//             uart8rec.cnt = 0; 
-//         else
-//             uart8rec.cnt++;
-        
-//         HAL_UART_Receive_IT(&huart8, uart8rec.buf + uart8rec.cnt, 1);
-//     }
-// }
+// 简单的串口发送函数，用于验证数据
+void send_thrust_curve_simple(int motor_num)
+{
+    if (motor_num < 0 || motor_num >= 6) return;
+    
+    ThrustCurve *curve = &thrustcurve[motor_num];
+    char buffer[128];
+    
+    // 简单格式化数据
+    int len = sprintf(buffer, 
+        "M%d: PWM[%.1f,%.1f,%.1f,%.1f] Thrust[%.1f,%.1f,%.1f,%.1f]\r\n",
+        motor_num,
+        curve->pwm[0], curve->pwm[1], curve->pwm[2], curve->pwm[3],
+        curve->thrust[0], curve->thrust[1], curve->thrust[2], curve->thrust[3]);
+    
+    // 发送数据
+    HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
+}

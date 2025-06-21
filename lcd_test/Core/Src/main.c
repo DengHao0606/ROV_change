@@ -92,7 +92,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   lcd_init();
-  lcd_show_string(10, 40, 240, 32, 32, "DH ZWJ", RED);
+  lcd_show_string(10, 40, 240, 32, 32, "EV LAB", RED);
   lcd_show_string(10, 80, 240, 24, 24, "TFTLCD TEST", RED);
   lcd_show_string(10, 110, 240, 16, 16, "ATOM@ALIENTEK", RED);
 

@@ -32,9 +32,9 @@ typedef struct {
   MotorParams_t motors[6];
 } JSON_Command_t;
 
-
-
-void JSON_Process_Init(void);
+float GetServo0Angle(void);
+void send_thrust_curve_simple(int motor_num);
 void JSON_Process_Data(uint8_t *json_str);
 static void parse_thrust_params(cJSON *motor_item, int motor_num);
+void apply_thrust_params_to_curve(int motor_num);
 #endif

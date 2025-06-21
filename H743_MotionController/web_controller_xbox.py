@@ -204,12 +204,12 @@ CONTROLLER_INIT = {
     "x": 0.0,
     "y": 0.0,
     "z": 0.0,
-    "roll": 0.0,
-    "pitch": 0.0,
+    # "roll": 0.0,
+    # "pitch": 0.0,
     "yaw": 0.0,
     "servo0": 0.0,
     "servo1": 0.0,
-    "state":0,
+    # "state":0,
 }
 
 
@@ -434,6 +434,7 @@ if __name__ == "__main__":
         #     joy_data_count += 1  # 增加计数器
 
         msg = json.dumps(monitor.controller) # 使用json传输数据，这里是将python的字典格式转为json字符串的形式的操作
+        print(msg)
         client_socket.sendto((msg + '\n').encode(), server_address)
         # ser.write((msg + '\n').encode())  # 向串口发送 JSON + 换行符
         # # 添加计数器逻辑

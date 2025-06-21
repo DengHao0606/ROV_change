@@ -59,36 +59,36 @@ void SystemClock_Config(void);
 void SimpleColorFade(void) {
     // 红色渐变（0 → 255 → 0）
     for (uint8_t r = 0; r <= 0xFF; r++) {
-        WS2812_SetAll(r, 0, 0);
+        WS2812_SetAll(r/4, 0, 0);
         WS2812_Update();
         HAL_Delay(10);
     }
     for (uint8_t r = 0xFF; r > 0; r--) {
-        WS2812_SetAll(r, 0, 0);
+        WS2812_SetAll(r/4, 0, 0);
         WS2812_Update();
         HAL_Delay(10);
     }
 
     // 绿色渐变（0 → 255 → 0）
     for (uint8_t g = 0; g <= 0xFF; g++) {
-        WS2812_SetAll(0, g, 0);
+        WS2812_SetAll(0, g/4, 0);
         WS2812_Update();
         HAL_Delay(10);
     }
     for (uint8_t g = 0xFF; g > 0; g--) {
-        WS2812_SetAll(0, g, 0);
+        WS2812_SetAll(0, g/4, 0);
         WS2812_Update();
         HAL_Delay(10);
     }
 
     // 蓝色渐变（0 → 255 → 0）
     for (uint8_t b = 0; b <= 0xFF; b++) {
-        WS2812_SetAll(0, 0, b);
+        WS2812_SetAll(0, 0, b/4);
         WS2812_Update();
         HAL_Delay(10);
     }
     for (uint8_t b = 0xFF; b > 0; b--) {
-        WS2812_SetAll(0, 0, b);
+        WS2812_SetAll(0, 0, b/4);
         WS2812_Update();
         HAL_Delay(10);
     }
@@ -129,7 +129,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
-    /* USER CODE END 2 */
+  /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -141,26 +141,11 @@ int main(void)
     // SimpleColorFade();  
     for(uint8_t r = 0; r <= 0xFF; r++)
     {
-      WS2812_SetAll(r/4, 0, 0x3F);
+      WS2812_SetAll(r/8, 0, 0x1F);
+      WS2812_SetFixedColor(0, 0, 0x1F);  // R=255, G=0, B=0
       WS2812_Update();
       HAL_Delay(30);
     }
-    // for (int i = 0; i < 2; i++)
-    // {
-    //   ws2812_set_all(0xFFFFFF); // 纯白?????
-    //   ws2812_gradient(200, 3);
-    //   HAL_Delay(1000);
-
-    //   ws2812_set_all(0x20B2AA); // 浅海洋绿
-    //   ws2812_gradient(200, 3);
-    //   HAL_Delay(1000);
-
-    //   ws2812_set_all(0xFFD700); // 金色
-    //   ws2812_gradient(200, 3);
-    //   HAL_Delay(1000);
-
-    //   // 更多颜色：https://www.w3schools.com/colors/colors_picker.asp
-    // }
   }
   /* USER CODE END 3 */
 }

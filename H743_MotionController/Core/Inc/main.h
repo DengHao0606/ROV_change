@@ -51,7 +51,7 @@ typedef struct {
 /* USER CODE BEGIN EC */
 extern CoordinateSystems robot;
 extern RobotController robot_controller;
-
+extern float servo0angle;
 extern float openloop_thrust[6];
 
 // extern int led_motion;

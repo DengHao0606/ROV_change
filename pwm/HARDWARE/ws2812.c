@@ -2,7 +2,66 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#define Code0  30
+#define Code1  60
+#define CodeReset 0
 
+uint8_t color[LED_COUNT][3];
+
+void WS2812_Set(uint8_t index, uint8_t r, uint8_t g, uint8_t b) 
+{ 
+	color[index][0] = r; 
+	color[index][1] = g; 
+	color[index][2] = b; 
+}
+void WS2812_SetAll(uint8_t r, uint8_t g, uint8_t b)
+{ 
+	for (uint8_t i = 0; i < LED_COUNT; i++) 
+	{
+		WS2812_Set(i, r, g, b) ;
+	}
+}
+void WS2812_Update() 
+{ 
+	static uint16_t data[LED_COUNT * 3 * 8 + 1]; 
+	for (int i = 0; i < LED_COUNT; i++)
+	{ 
+		uint8_t r = color[i][0]; 
+		uint8_t g = color[i][1]; 
+		uint8_t b = color[i][2]; 
+
+		for (int j = 0; j < 8; j++) 
+		{ 
+			data[24 * i + j] = (g & (0x80 >> j)) ? Code1 : Code0;
+			data[24 * i + 8 + j] = (r & (0x80 >> j)) ? Code1 : Code0;
+			data[24 * i + 16 + j] = (b & (0x80 >> j)) ? Code1 : Code0; 
+		}
+	}
+		
+		data[LED_COUNT * 24] = CodeReset; 
+		
+		HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_1); 
+		HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_3);
+		HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_4); 
+
+		__HAL_TIM_SetCounter(&htim3, 0);
+		
+		HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)data, sizeof(data)/sizeof(uint16_t));
+		HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)data, sizeof(data)/sizeof(uint16_t));
+		HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_4, (uint32_t*)data, sizeof(data)/sizeof(uint16_t));
+}
+//TIM3的通道2无DMA
+void WS2812_SetFixedColor(uint8_t r, uint8_t g, uint8_t b) 
+{
+    // WS2812 数据格式：G-R-B（先发高位 MSB）
+    uint32_t grb = (g << 16) | (r << 8) | b;
+
+    // 只需要第一个 bit 是 1（60%占空比），后续 bit 可以不管（因为只点亮一个 LED）
+    TIM3->CCR2 = 60;  // 第一个 bit=1（60%占空比）
+    HAL_Delay(1);      // 保持一段时间（模拟 WS2812 数据）
+    TIM3->CCR2 = 0;    // 复位信号（低电平）
+    HAL_Delay(1);      // 保持至少 50µs
+}
 // LED颜色
 // uint32_t ws2812_color[WS2812_NUM] = {0};
 
@@ -170,53 +229,4 @@
 // 	}
 // }
 
-#include "ws2812.h"
 
-#define Code0  30
-#define Code1  60
-#define CodeReset 0
-
-uint8_t color[LED_COUNT][3];
-
-void WS2812_Set(uint8_t index, uint8_t r, uint8_t g, uint8_t b) 
-{ 
-	color[index][0] = r; 
-	color[index][1] = g; 
-	color[index][2] = b; 
-}
-void WS2812_SetAll(uint8_t r, uint8_t g, uint8_t b)
-{ 
-	for (uint8_t i = 0; i < LED_COUNT; i++) 
-	{
-		WS2812_Set(i, r, g, b) ;
-	}
-}
-void WS2812_Update() 
-{ 
-	static uint16_t data[LED_COUNT * 3 * 8 + 1]; 
-	for (int i = 0; i < LED_COUNT; i++)
-	{ 
-		uint8_t r = color[i][0]; 
-		uint8_t g = color[i][1]; 
-		uint8_t b = color[i][2]; 
-
-		for (int j = 0; j < 8; j++) 
-		{ 
-			data[24 * i + j] = (g & (0x80 >> j)) ? Code1 : Code0;
-			data[24 * i + 8 + j] = (r & (0x80 >> j)) ? Code1 : Code0;
-			data[24 * i + 16 + j] = (b & (0x80 >> j)) ? Code1 : Code0; 
-		}
-	}
-		
-		data[LED_COUNT * 24] = CodeReset; 
-		
-		HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_1); 
-		HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_3);
-		HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_4); 
-
-		__HAL_TIM_SetCounter(&htim3, 0);
-		
-		HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t*)data, sizeof(data)/sizeof(uint16_t));
-		HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, (uint32_t*)data, sizeof(data)/sizeof(uint16_t));
-		HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_4, (uint32_t*)data, sizeof(data)/sizeof(uint16_t));
-}

@@ -2,6 +2,7 @@
 #include "usart.h"
 #include "main.h"
 #include "motor.h"
+#include "json_process.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,8 +18,11 @@ uint8_t dvlstate = 0;
 
 IMU imu;
 
+extern int threadmonitor_uart1;
 extern int threadmonitor_uart4;
 extern int threadmonitor_uart7;
+extern int threadmonitor_uart8;
+
 extern float checkeddepth;
 
 extern CoordinateSystems target;
@@ -51,7 +55,88 @@ void CommInit(void)
 
     HAL_Delay(100); // 稍作延迟防止无法进入中断
 }
+/*
+ * 函数名: HAL_UART_RxCpltCallback
+ * 描述  : 串口中断处理
+ * 输入  : UART_HandleTypeDef *huart 串口地址
+ * 输出  : /
+ * 备注  : /
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
+{
+    // 上位机摇杆指令
+    if (huart == &huart1) 
+    {
+        threadmonitor_uart1 = 200;
+        if (uart1rec.buf[uart1rec.cnt - 1] == '{' && uart1rec.buf[uart1rec.cnt] == '\"' && uart1rec.cnt > 0)
+        {
+            uart1rec.cnt = 1;
+            uart1rec.buf[0] = '{';
+            uart1rec.buf[1] = '\"';
+        }
+        // 检查帧尾（换行符作为结束）
+        else if (uart1rec.buf[uart1rec.cnt] == '\n' && uart1rec.cnt > 0)
+        {
+            uart1rec.buf[uart1rec.cnt] = '\0'; // 确保字符串终止
+            JSON_Process_Data((uint8_t *)uart1rec.buf);//JSON字符串处理
+            uart1rec.cnt = 201; // 使缓冲计数归零
+        }
+        if (uart1rec.cnt >= 200)// 防止缓冲区溢出
+            uart1rec.cnt = 0; 
+        else
+            uart1rec.cnt++;
+        
+        HAL_UART_Receive_IT(&huart1, uart1rec.buf + uart1rec.cnt, 1);
+    }
+//     if (huart == &huart4)
+//     {
+//         threadmonitor_uart4 = 200;
+//         if (uart4rec.buf[uart4rec.cnt - 1] == 0xfa && uart4rec.buf[uart4rec.cnt] == 0xaf && uart4rec.cnt > 0)
+//         {
+//             uart4rec.cnt    = 1;
+//             uart4rec.buf[0] = 0xfa;
+//             uart4rec.buf[1] = 0xaf;
+//         }
+//         if (uart4rec.buf[uart4rec.cnt - 1] == 0xfb && uart4rec.buf[uart4rec.cnt] == 0xbf && uart4rec.cnt > 0)
+//         {
+//             CmdSolve(uart4rec.buf);
+//             uart4rec.cnt = 201; // 使缓冲计数归零
+//         }
+//         if (uart4rec.cnt > 200) // 防止缓冲溢出
+//             uart4rec.cnt = 0;
+//         else
+//             uart4rec.cnt++;
 
+//         HAL_UART_Receive_IT(&huart4, uart4rec.buf + uart4rec.cnt, 1);
+//     }
+
+     // 惯性导航系统
+//     if (huart == &huart7)
+//     {
+//         threadmonitor_uart7 = 100;
+//         if (uart7rec.buf[uart7rec.cnt - 1] == 0xfa && uart7rec.buf[uart7rec.cnt] == 0xaf && uart7rec.cnt > 0)
+//         {
+//             uart7rec.cnt    = 1;
+//             uart7rec.buf[0] = 0xfa;
+//             uart7rec.buf[1] = 0xaf;
+//         }
+//         if (uart7rec.buf[uart7rec.cnt - 1] == 0xfb && uart7rec.buf[uart7rec.cnt] == 0xbf && uart7rec.cnt > 5)
+//         {
+//             ImuSolve(uart7rec.buf);
+//             uart7rec.cnt = 201; // 使缓冲计数归零
+//         }
+//         if (uart7rec.cnt > 200) // 防止缓冲溢出
+//             uart7rec.cnt = 0;
+//         else
+//             uart7rec.cnt++;
+
+//         __HAL_UART_CLEAR_OREFLAG(&huart7);
+//         huart7.RxState = HAL_UART_STATE_READY;
+//         huart7.Lock    = HAL_UNLOCKED;
+
+//         HAL_UART_Receive_IT(&huart7, uart7rec.buf + uart7rec.cnt, 1);
+//     }
+}
 /*
  * 函数名: Check_Data
  * 描述  : 异或校验
@@ -241,72 +326,12 @@ void CommInit(void)
 // }
 
 /*
- * 函数名: HAL_UART_RxCpltCallback
- * 描述  : 串口中断处理
- * 输入  : UART_HandleTypeDef *huart 串口地址
+ * 函数名: imu_setmode
+ * 描述  : 设置室内导航模式
+ * 输入  : /
  * 输出  : /
  * 备注  : /
  */
-// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
-// {
-    // 串口接收控制指令
-//     if (huart == &huart4)
-//     {
-//         threadmonitor_uart4 = 200;
-//         if (uart4rec.buf[uart4rec.cnt - 1] == 0xfa && uart4rec.buf[uart4rec.cnt] == 0xaf && uart4rec.cnt > 0)
-//         {
-//             uart4rec.cnt    = 1;
-//             uart4rec.buf[0] = 0xfa;
-//             uart4rec.buf[1] = 0xaf;
-//         }
-//         if (uart4rec.buf[uart4rec.cnt - 1] == 0xfb && uart4rec.buf[uart4rec.cnt] == 0xbf && uart4rec.cnt > 0)
-//         {
-//             CmdSolve(uart4rec.buf);
-//             uart4rec.cnt = 201; // 使缓冲计数归零
-//         }
-//         if (uart4rec.cnt > 200) // 防止缓冲溢出
-//             uart4rec.cnt = 0;
-//         else
-//             uart4rec.cnt++;
-
-//         HAL_UART_Receive_IT(&huart4, uart4rec.buf + uart4rec.cnt, 1);
-//     }
-
-     // 惯性导航系统
-//     if (huart == &huart7)
-//     {
-//         threadmonitor_uart7 = 100;
-//         if (uart7rec.buf[uart7rec.cnt - 1] == 0xfa && uart7rec.buf[uart7rec.cnt] == 0xaf && uart7rec.cnt > 0)
-//         {
-//             uart7rec.cnt    = 1;
-//             uart7rec.buf[0] = 0xfa;
-//             uart7rec.buf[1] = 0xaf;
-//         }
-//         if (uart7rec.buf[uart7rec.cnt - 1] == 0xfb && uart7rec.buf[uart7rec.cnt] == 0xbf && uart7rec.cnt > 5)
-//         {
-//             ImuSolve(uart7rec.buf);
-//             uart7rec.cnt = 201; // 使缓冲计数归零
-//         }
-//         if (uart7rec.cnt > 200) // 防止缓冲溢出
-//             uart7rec.cnt = 0;
-//         else
-//             uart7rec.cnt++;
-
-//         __HAL_UART_CLEAR_OREFLAG(&huart7);
-//         huart7.RxState = HAL_UART_STATE_READY;
-//         huart7.Lock    = HAL_UNLOCKED;
-
-//         HAL_UART_Receive_IT(&huart7, uart7rec.buf + uart7rec.cnt, 1);
-//     }
-// }
-
-// /*
-//  * 函数名: imu_setmode
-//  * 描述  : 设置室内导航模式
-//  * 输入  : /
-//  * 输出  : /
-//  * 备注  : /
-//  */
 // void imu_setmode(UART_HandleTypeDef *huart)
 // {
 //     uint8_t BUFIMUSETMODE[14] = {0xFC, 0xCF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
@@ -338,4 +363,3 @@ void CommInit(void)
 //     uint8_t BUFDVLPOWERON[14] = {0xFC, 0xCF, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
 //     HAL_UART_Transmit(huart, BUFDVLPOWERON, 14, 10); // 关闭DVL
 // }
-

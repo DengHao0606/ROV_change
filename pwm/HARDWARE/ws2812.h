@@ -11,6 +11,7 @@
 
 void WS2812_Set(uint8_t index, uint8_t r, uint8_t g, uint8_t b);
 void WS2812_SetAll(uint8_t r, uint8_t g, uint8_t b);
+void WS2812_SetFixedColor(uint8_t r, uint8_t g, uint8_t b);
 void WS2812_Update();
 // #define CODE_ONE_DUTY 66
 // #define CODE_ZERO_DUTY 21

@@ -1,6 +1,8 @@
 #include "motor.h"
 #include "tim.h"
-
+#include "usart.h"
+#include "RS485_process.h"
+#include "json_process.h"
 ThrustCurve thrustcurve[6];
 extern RobotController robot_controller;
 extern float servo0angle;
@@ -12,6 +14,62 @@ float line(float startx, float endx, float starty, float endy, float input)
     return starty + k * (input - startx);
 }
 
+/*
+ * 函数名: UploadThrustCurveData
+ * 描述  : 通过串口上传推力曲线数据
+ * 输入  : motor_num - 电机编号(0-5), 如果为-1则上传所有电机数据
+ * 输出  : 无
+ * 备注  : 使用简单文本格式，方便直接查看
+ */
+void UploadThrustCurveData(int motor_num)
+{
+    char buffer[128];
+    int len;
+    
+    if(motor_num == -1) {
+        // 上传所有电机数据
+        for(int i = 0; i < 6; i++) {
+            len = sprintf(buffer, "Motor%d: PWM=[%d,%d,%d,%d], Thrust=[%.1f,%.1f,%.1f,%.1f]\r\n",
+                         i,
+                         (int)thrustcurve[i].pwm[0], (int)thrustcurve[i].pwm[1],
+                         (int)thrustcurve[i].pwm[2], (int)thrustcurve[i].pwm[3],
+                         thrustcurve[i].thrust[0], thrustcurve[i].thrust[1],
+                         thrustcurve[i].thrust[2], thrustcurve[i].thrust[3]);
+            HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
+            HAL_Delay(10); // 防止数据堆积
+        }
+    } 
+    else if(motor_num >= 0 && motor_num < 6) {
+        // 上传单个电机数据
+        len = sprintf(buffer, "Motor%d: PWM=[%d,%d,%d,%d], Thrust=[%.1f,%.1f,%.1f,%.1f]\r\n",
+                     motor_num,
+                     (int)thrustcurve[motor_num].pwm[0], (int)thrustcurve[motor_num].pwm[1],
+                     (int)thrustcurve[motor_num].pwm[2], (int)thrustcurve[motor_num].pwm[3],
+                     thrustcurve[motor_num].thrust[0], thrustcurve[motor_num].thrust[1],
+                     thrustcurve[motor_num].thrust[2], thrustcurve[motor_num].thrust[3]);
+        HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
+    }
+}
+
+/*
+ * 函数名: UploadCurrentPWMOutput
+ * 描述  : 上传当前PWM输出值
+ * 输入  : 无
+ * 输出  : 无
+ */
+void UploadCurrentPWMOutput(void)
+{
+    char buffer[128];
+    int len = sprintf(buffer, "PWM Output: [%d,%d,%d,%d,%d,%d,%f]\r\n",
+                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_1),
+                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_2),
+                     __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_2),
+                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_3),
+                     __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1),
+                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_4),
+                    (servo0angle) );
+    HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
+}
 /*
  * 函数名:Thrust2PWM
  * 描述  :推力曲线拟合
@@ -118,7 +176,7 @@ void MotorInit(void)
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_2, Motor_Pwm_Median_Duty);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3, Motor_Pwm_Median_Duty);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, Motor_Pwm_Median_Duty);
-    // HAL_Delay(1000);
+    HAL_Delay(1000);
     // HAL_Delay(1000);
 }
 
@@ -199,5 +257,20 @@ void MotorPwmRefresh(float *motorthrust)
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3, 3500);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_1, 3500);
 */
+    static uint32_t last_upload_time = 0;
+    if(HAL_GetTick() - last_upload_time > 100) 
+    { // 每1秒上传一次
+        UploadCurrentPWMOutput();
+        last_upload_time = HAL_GetTick();
+    }
+    // 映射servo0angle到舵机角度范围
+    float mapped_angle = line(0.2f, 0.99f, 45.0f, 135.0f, servo0angle);
+    
+    // 确保角度在有效范围内
+    if(mapped_angle < 45.0f) mapped_angle = 45.0f;
+    if(mapped_angle > 135.0f) mapped_angle = 135.0f;
+    
+    // 设置舵机角度
+    servo_set_angle(1, (int16_t)mapped_angle, 100);  // 使用舵机ID=1
 }
 
