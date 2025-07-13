@@ -17,7 +17,8 @@
             "stdio.h": "c",
             "stdlib.h": "c",
             "tim.h": "c",
-            "rs485_process.h": "c"
+            "rs485_process.h": "c",
+            "ms5837.h": "c"
         }
     },
     "extensions": {}

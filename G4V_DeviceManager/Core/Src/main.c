@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fdcan.h"
+#include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -26,8 +27,9 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <string.h>
-#include "can_process.h"
 
+#include "can_process.h"
+#include "ms5837.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,18 +51,17 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+float measureddepth = 0;
+float realdepth     = 0;
+float startdepth    = 0;
+float checkeddepth  = 0;
+float temperature;
+uint8_t can_tx_data[8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-//重定向printf
-int fputc(int ch,FILE *f)
-{
-  uint8_t temp[1]={ch};
-  HAL_UART_Transmit(&huart2,temp,1,2);
-  return ch;
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -98,13 +99,14 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_USART2_UART_Init();
+  MX_FDCAN2_Init();
+  MX_I2C4_Init();
   /* USER CODE BEGIN 2 */
   FDCAN1_Config();
-  printf("G474V Receiver Ready (Listening ID:0x666)\r\n");
 
-  uint8_t can_send[64] = {0};
-  for (int i = 0; i < 64; i++)
-  can_send[i] = i;
+  Ms5837Init(&hi2c4);
+  Ms5837Depth(&startdepth);
+  checkeddepth = startdepth;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,10 +114,19 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
-    // Canfd1Transmit64(0x000 + 0x005, can_send);
-    // HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
-    // HAL_Delay(1000);
+    Ms5837Read(&hi2c4);
+    Ms5837Temperature(&temperature);
+    Ms5837Depth(&measureddepth);
+    realdepth = measureddepth - startdepth;  // 计算相对深度
+
+    /* 数据打包和发送 */
+    PackSensorData(temperature, realdepth, can_tx_data);
+
+    Canfd1Transmit64(0x101, can_tx_data); 
+    
+    HAL_Delay(20);  // 发送间隔50ms（可根据需要调整）
     }
   /* USER CODE END 3 */
 }
@@ -166,7 +177,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /**

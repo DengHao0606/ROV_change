@@ -4,13 +4,6 @@
             "path": "."
         }
     ],
-    "settings": {
-        "files.associations": {
-            "user_fdcan1.h": "c",
-            "stm32g4xx_hal.h": "c",
-            "fdcan.h": "c",
-            "can_process.h": "c"
-        }
-    },
+    "settings": {},
     "extensions": {}
 }

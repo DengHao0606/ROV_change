@@ -3,7 +3,8 @@
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
-    "HARDWARE"
+    "HARDWARE",
+    "Device"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
@@ -37,6 +38,9 @@
                   },
                   {
                     "path": "Core/Src/fdcan.c"
+                  },
+                  {
+                    "path": "Core/Src/i2c.c"
                   },
                   {
                     "path": "Core/Src/usart.c"
@@ -104,6 +108,12 @@
                 "path": "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.c"
               },
               {
+                "path": "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_i2c.c"
+              },
+              {
+                "path": "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_i2c_ex.c"
+              },
+              {
                 "path": "Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c"
               },
               {
@@ -144,6 +154,7 @@
       "compileConfig": {
         "cpuType": "Cortex-M4",
         "floatingPointHardware": "single",
+        "archExtensions": "",
         "useCustomScatterFile": false,
         "scatterFilePath": "<YOUR_SCATTER_FILE>.sct",
         "storageLayout": {
@@ -153,7 +164,17 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x20000000",
-                "size": "0x5000"
+                "size": "0x20000"
+              },
+              "isChecked": true,
+              "noInit": false
+            },
+            {
+              "tag": "IRAM",
+              "id": 2,
+              "mem": {
+                "startAddr": "0x24000000",
+                "size": "0x80000"
               },
               "isChecked": true,
               "noInit": false
@@ -165,7 +186,7 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x08000000",
-                "size": "0x10000"
+                "size": "0x200000"
               },
               "isChecked": true,
               "isStartup": true
@@ -202,8 +223,10 @@
           "Drivers/STM32G4xx_HAL_Driver/Inc/Legacy",
           "Drivers/CMSIS/Device/ST/STM32G4xx/Include",
           "Drivers/CMSIS/Include",
+          ".cmsis/include",
           "MDK-ARM/RTE/_G4V_DeviceManager",
-          "HARDWARE"
+          "HARDWARE",
+          "Device"
         ],
         "libList": [],
         "defineList": [
@@ -241,14 +264,14 @@
           "beforeBuildTasks": [],
           "afterBuildTasks": [],
           "global": {
-            "use-microLIB": true,
+            "use-microLIB": false,
             "output-debug-info": "enable"
           },
           "c/cpp-compiler": {
             "optimization": "level-0",
             "language-c": "c99",
             "language-cpp": "c++11",
-            "warnings": "ac5-like-warnings"
+            "link-time-optimization": false
           },
           "asm-compiler": {
             "$use": "asm-auto"
@@ -261,5 +284,5 @@
       }
     }
   },
-  "version": "3.5"
+  "version": "3.6"
 }
