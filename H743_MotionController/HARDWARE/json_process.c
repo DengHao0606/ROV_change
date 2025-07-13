@@ -11,51 +11,15 @@
 #include <stdlib.h>
 #include <math.h>
 
-#pragma pack(push, 1) // 确保1字节对齐
-typedef struct {
-    uint8_t header[2];    // 包头标识 0xAA 0x55
-    uint8_t motor_num;    // 电机编号(0-5)
-    float pwm[4];         // PWM关键点
-    float thrust[4];      // 推力关键点
-    uint16_t checksum;    // 校验和
-} ThrustCurvePacket_t;
-#pragma pack(pop) // 恢复默认对齐
-float servo0angle = 0.0;
+float servo0angle = 0.5;
 extern int threadmonitor_uart8;
-int bbb=0;
 JSON_Command_t command = {0};
+extern float received_depth;
+extern float received_temp;
+extern uint8_t can_rx_data;
 
-/* 私有函数 */
 static void parse_json_data(uint8_t *json_str);
 static void apply_motor_control(void);
-
-// 在json_process.h中添加声明
-
-
-
-
-/**
-  * @brief  打印当前所有电机的推力参数
-  * @param  None
-  * @retval None
-  */
-static void print_thrust_params(void)
-{
-    printf("\nLatest Thrust Parameters:\n");
-    printf("Motor | np_mid | np_ini | pp_ini | pp_mid | nt_end | nt_mid | pt_mid | pt_end\n");
-    printf("------|--------|--------|--------|--------|--------|--------|--------|-------\n");
-    
-    for (int i = 0; i < 6; i++) {
-        MotorParams_t *m = &command.motors[i];
-        printf("M%-4d | %-6.2f | %-6.2f | %-6.2f | %-6.2f | %-6.2f | %-6.2f | %-6.2f | %-6.2f\n",
-               i,
-               m->np_mid, m->np_ini,
-               m->pp_ini, m->pp_mid,
-               m->nt_end, m->nt_mid,
-               m->pt_mid, m->pt_end);
-    }
-    printf("\n");
-}
 
 /*
  * 函数名: JSON_Process_Data
@@ -84,7 +48,7 @@ static void parse_json_data(uint8_t *json_str)
       const char *error_ptr = cJSON_GetErrorPtr();
       if (error_ptr != NULL) 
       {
-          printf("Error before: %s\n", error_ptr);
+        //   printf("Error before: %s\n", error_ptr);
       }  
       return;
   }
@@ -124,6 +88,14 @@ static void parse_json_data(uint8_t *json_str)
     } 
     
 //   HAL_UART_Transmit_IT(&huart1,(uint16_t)&servo0angle, 1);//调试用
+
+    static uint32_t last_upload_time = 0;
+    if(HAL_GetTick() - last_upload_time > 100) 
+    { // 每1秒上传一次
+        UploadCurrentPWMOutput();
+        last_upload_time = HAL_GetTick();
+    }
+
     HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_7);
     cJSON_Delete(root);
 }
@@ -183,26 +155,33 @@ void apply_thrust_params_to_curve(int motor_num)
     curve->thrust[1] = motor->nt_mid;
     curve->thrust[2] = motor->pt_mid;
     curve->thrust[3] = motor->pt_end;
-    
-    // 上传更新后的曲线数据(二进制格式)
-    // send_thrust_curve_simple(motor_num);
 }
 
-// 简单的串口发送函数，用于验证数据
-void send_thrust_curve_simple(int motor_num)
+// 将realdepth和temperature打包成json发送到上位机
+void send_depth_temperature()
 {
-    if (motor_num < 0 || motor_num >= 6) return;
-    
-    ThrustCurve *curve = &thrustcurve[motor_num];
-    char buffer[128];
-    
-    // 简单格式化数据
-    int len = sprintf(buffer, 
-        "M%d: PWM[%.1f,%.1f,%.1f,%.1f] Thrust[%.1f,%.1f,%.1f,%.1f]\r\n",
-        motor_num,
-        curve->pwm[0], curve->pwm[1], curve->pwm[2], curve->pwm[3],
-        curve->thrust[0], curve->thrust[1], curve->thrust[2], curve->thrust[3]);
-    
-    // 发送数据
-    HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
+    static uint8_t send_buf[128]; // 专用发送缓冲区
+    cJSON *root = cJSON_CreateObject();
+    if (!root) return;
+
+    // 使用cJSON_AddNumberToObject直接添加数字
+    cJSON_AddNumberToObject(root, "depth", received_depth);
+    cJSON_AddNumberToObject(root, "temperature", received_temp);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    if (json_str) {
+        size_t len = strlen(json_str);
+        
+        // 使用专用缓冲区
+        if (len + 3 < sizeof(send_buf)) {
+            memcpy(send_buf, json_str, len);
+            send_buf[len] = '\r';
+            send_buf[len+1] = '\n';
+            // 使用阻塞发送（非中断模式）
+            HAL_UART_Transmit(&huart1, send_buf, len + 2, 100);
+        }
+        
+        free(json_str);
+    }
+    cJSON_Delete(root);
 }

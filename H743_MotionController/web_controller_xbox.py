@@ -62,7 +62,7 @@ import pygame   #与游戏手柄进行一个交互的pygame模块，下面有个
 #手柄键位分布 以及编号
 #备注：   axis(2)方向，控制左右的方向。     axis(0)方向，控制yaw的方向。    axis(1)方向，控制前后的方向。    axis(3)方向，控制上下的方向。
 
-# 全局电机参数字典
+# 电机参数
 MOTOR_PARAMS = {
     "m0": {
         'num': 0,
@@ -425,13 +425,13 @@ if __name__ == "__main__":
             monitor.stop = False
 
         time.sleep(0.05)
-        #time.sleep(2)
+        # time.sleep(2)
         # 每发送10次摇杆数据，发送一次推力参数
-        # if joy_data_count >= 100:
-        #     hw_controller.hwinit(client_socket)
-        #     joy_data_count = 0  # 重置计数器
-        # else:
-        #     joy_data_count += 1  # 增加计数器
+        if joy_data_count >= 100:
+            hw_controller.hwinit(client_socket)
+            joy_data_count = 0  # 重置计数器
+        else:
+            joy_data_count += 1  # 增加计数器
 
         msg = json.dumps(monitor.controller) # 使用json传输数据，这里是将python的字典格式转为json字符串的形式的操作
         print(msg)

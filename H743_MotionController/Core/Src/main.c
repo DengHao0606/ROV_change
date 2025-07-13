@@ -38,6 +38,7 @@
 #include "json_process.h"
 #include "can_process.h"
 #include "RS485_process.h"
+#include "wt_usart.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,18 +63,18 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-CoordinateSystems robot;
-CoordinateSystems target;
+// CoordinateSystems robot;
+// CoordinateSystems target;
 
-float Vx = 0, Vy = 0, Ry = 0, Tx = 0, Ty = 0, Tz = 0, Mx = 0, My = 0, Mz = 0;
+// float Vx = 0, Vy = 0, Ry = 0, Tx = 0, Ty = 0, Tz = 0, Mx = 0, My = 0, Mz = 0;
 
 
-CoordinateSystems robot_pos; // 真实的机器人
+// CoordinateSystems robot_pos; // 真实的机器人
 
-CoordinateSystems robot_im_pos;    // 假的水平的机器人,用于计算机器人水平位置误�??????????
-CoordinateSystems robot_im_spd;    // 速度空间中的机器�??????????,用于计算机器人水平横移�?�前进�?�度
-CoordinateSystems robot_im_thrust; // 推力空间中的的机器人,用于计算推力
-CoordinateVector  required_thrust = {0, 0, 0, 0, 0, 0};
+// CoordinateSystems robot_im_pos;    // 假的水平的机器人,用于计算机器人水平位置误�???????????????
+// CoordinateSystems robot_im_spd;    // 速度空间中的机器�???????????????,用于计算机器人水平横移�?�前进�?�度
+// CoordinateSystems robot_im_thrust; // 推力空间中的的机器人,用于计算推力
+// CoordinateVector  required_thrust = {0, 0, 0, 0, 0, 0};
 
 
 RobotController robot_controller;
@@ -99,11 +100,15 @@ int start = 0;
 
 uint8_t transbuf[157] = {0};
 
-float measureddepth = 0;
-float realdepth     = 0;
-float startdepth    = 0;
-float checkeddepth  = 0;
-uint8_t feed[1] = {0};
+// float measureddepth = 0;
+// float realdepth     = 0;
+// float startdepth    = 0;
+// float checkeddepth  = 0;
+float received_depth = 0;
+float received_temp = 0;
+uint8_t can_rx_data[8];
+uint8_t angle[8] = {0x50, 0x03, 0x00, 0x3D, 0x00, 0x03, 0x99, 0x86};
+uint8_t accelarate[8] = {0x50, 0x03, 0x00, 0x34, 0x00, 0x03, 0x49, 0x84};
 // extern float servo0angle;
 /* USER CODE END PV */
 
@@ -123,9 +128,9 @@ int fputc(int ch,FILE *f)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /*
- * 函数�?????????????????: HAL_TIM_PeriodElapsedCallback
- * 描述  : 定时器中断处�?????????????????
- * 输入  : TIM_HandleTypeDef *htim 定时器地�?????????????????
+ * 函数�??????????????????????: HAL_TIM_PeriodElapsedCallback
+ * 描述  : 定时器中断处�??????????????????????
+ * 输入  : TIM_HandleTypeDef *htim 定时器地�??????????????????????
  * 输出  : /
  * 备注  : 用于处理数据
  */
@@ -146,6 +151,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         threadmonitor_uart7--;
         threadmonitor_uart8--;
 
+        if (threadmonitor_uart1 <= 0)
+        {
+            HAL_UART_Receive_IT(&huart1, uart1rec.buf, 1);
+            __HAL_UART_CLEAR_OREFLAG(&huart1);
+            threadmonitor_uart1 = 30;
+        }
         if (threadmonitor_tim2 <= 0)
         {
             __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
@@ -157,12 +168,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
             HAL_TIM_Base_Start_IT(&htim3);
             threadmonitor_tim3 = 30;
-        }
-        if (threadmonitor_uart1 <= 0)
-        {
-            HAL_UART_Receive_IT(&huart1, uart1rec.buf, 1);
-            __HAL_UART_CLEAR_OREFLAG(&huart1);
-            threadmonitor_uart1 = 30;
         }
         if (threadmonitor_uart7 <= 0)
         {
@@ -188,34 +193,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     else if (htim == (&htim2))
     {
         threadmonitor_tim3 = 20;
-
-    //     memcpy(transbuf + 3, &(robot.base.vector), 24);
-    //     // memcpy(transbuf + 27, &(robot.target_inbase.vector), 24);
-    //     memcpy(transbuf + 27, &(robot_im_pos.target_inbase.vector), 12);
-    //     memcpy(transbuf + 39, (uint8_t *)&(robot_pos.target_inbase.vector.rx), 12);
-
-    //     memcpy(transbuf + 51, &(robot.target_inworld.vector), 24);
-    //     memcpy(transbuf + 75, &(robot_controller.state), 6);
-    //     memcpy(transbuf + 81, &(imu), 50);
-    //     memcpy(transbuf + 131, &(motorthrust_filted), 24);
-
-    //     // __HAL_UNLOCK(&huart4);
-    //     HAL_UART_Transmit(&huart4, transbuf, 157, 10);
-
-    //     // led
-    //     if (led_dataup)
-    //         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_SET);
-    //     else
-    //         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_RESET);
-    //     led_dataup = !led_dataup;
+        send_depth_temperature();
     }
     //  3号定时器中断
     //  频率 30hz
     else if (htim == (&htim3))
     {
         threadmonitor_tim2 = 20;
-
-        // // Cs data refresh
+        // WIT_UART_Transmit();
+        // Cs data refresh
         // robot.base.vector.x  = imu.pos.x;
         // robot.base.vector.y  = imu.pos.y;
         // robot.base.vector.z  = imu.pos.z;
@@ -223,26 +209,26 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // robot.base.vector.ry = imu.pos.ry;
         // robot.base.vector.rz = imu.pos.rz;
 
-        // // refresh CoordinateSystems
+        // refresh CoordinateSystems
         // robot.base.extract(&(robot.base));
 
-        // // Cs transform
+        // Cs transform
         // robot.world2base(&robot);
 
-        // // 计算各控制器�??????????�??????????测量值与误差值DF
-        // // 机器人坐�??????????
+        // 计算各控制器�???????????????�???????????????测量值与误差值DF
+        // 机器人坐�???????????????
         // robot_im_pos.base.vector.x = robot_pos.base.vector.x = imu.pos.x;
         // robot_im_pos.base.vector.y = robot_pos.base.vector.y = imu.pos.y;
         // robot_im_pos.base.vector.z = robot_pos.base.vector.z = imu.pos.z;
 
-        // // 目标位置
+        // 目标位置
         // robot_im_pos.target_inworld.vector.x = robot_pos.target_inworld.vector.x = robot.target_inworld.vector.x;
         // robot_im_pos.target_inworld.vector.y = robot_pos.target_inworld.vector.y = robot.target_inworld.vector.y;
         // robot_im_pos.target_inworld.vector.z = robot_pos.target_inworld.vector.z = robot.target_inworld.vector.z;
         // robot_im_pos.target_inworld.vector.rz = robot_pos.target_inworld.vector.rz = robot.target_inworld.vector.rz;
         // robot_im_pos.target_inworld.extract(&(robot_im_pos.target_inworld));
 
-        // // 姿�??
+        // 姿�??
         // robot_pos.base.vector.rx = imu.pos.rx;
         // robot_pos.base.vector.ry = imu.pos.ry;
         // robot_pos.base.vector.rz = imu.pos.rz;
@@ -253,87 +239,87 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // robot_im_pos.base.vector.rz                                  = robot_pos.base.vector.rz;
 
 
-        // // 导出各参考系变换器对象的基底矩阵
+        // 导出各参考系变换器对象的基底矩阵
         // robot_im_pos.base.extract(&(robot_im_pos.base));
         // robot_im_spd.base.extract(&(robot_im_spd.base));
         // robot_im_thrust.base.extract(&(robot_im_thrust.base));
 
-        // // 计算机器人的水平横移与前进�?�度
+        // 计算机器人的水平横移与前进�?�度
         // robot_im_spd.target_inbase.vector.x = imu.spd.x;
         // robot_im_spd.target_inbase.vector.y = imu.spd.y;
         // robot_im_spd.target_inbase.vector.z = imu.spd.z;
         // robot_im_spd.target_inbase.extract(&(robot_im_spd.target_inbase));
         // robot_im_spd.base2world(&robot_im_spd);
 
-        // // 计算机器人参考系中的水平误差（横向与前向�??????????
+        // 计算机器人参考系中的水平误差（横向与前向�???????????????
         // robot_im_pos.world2base(&robot_im_pos);
 
 
         // Pid controller refresh
-        if (robot_controller.state[0] == 1) // x
-            Tx = robot_controller.x.refresh(&robot_controller.x, robot_im_pos.target_inbase.vector.x);
-        else
-            Tx = openloop_thrust[0];
+        // if (robot_controller.state[0] == 1) // x
+        //     Tx = robot_controller.x.refresh(&robot_controller.x, robot_im_pos.target_inbase.vector.x);
+        // else
+        //     Tx = openloop_thrust[0];
 
-        if (robot_controller.state[1] == 1) // y
-            Ty = robot_controller.y.refresh(&robot_controller.y, robot_im_pos.target_inbase.vector.y);
-        else
-            Ty = openloop_thrust[1];
+        // if (robot_controller.state[1] == 1) // y
+        //     Ty = robot_controller.y.refresh(&robot_controller.y, robot_im_pos.target_inbase.vector.y);
+        // else
+        //     Ty = openloop_thrust[1];
 
-        if (robot_controller.state[2] == 1) // z
-            Tz = robot_controller.z.refresh(&robot_controller.z, robot_im_pos.target_inbase.vector.z);
-        else
-            Tz = openloop_thrust[2];
+        // if (robot_controller.state[2] == 1) // z
+        //     Tz = robot_controller.z.refresh(&robot_controller.z, robot_im_pos.target_inbase.vector.z);
+        // else
+        //     Tz = openloop_thrust[2];
 
         // 姿�?�控制器
-        robot_pos.target_inworld.vector.ry = Ry;
-        robot_pos.target_inworld.extract(&(robot_pos.target_inworld));
-        robot_pos.world2base(&robot_pos);
+        // robot_pos.target_inworld.vector.ry = Ry;
+        // robot_pos.target_inworld.extract(&(robot_pos.target_inworld));
+        // robot_pos.world2base(&robot_pos);
 
 
-        if (robot_controller.state[3] == 1) // rx
+        // if (robot_controller.state[3] == 1) // rx
             //Mx = robot_controller.rx.refresh(&robot_controller.rx, AngleCorrect(robot_pos.target_inbase.vector.rx));
-            Mx = 0;
-        else
+            // Mx = 0;
+        // else
             //Mx = openloop_thrust[3];
-            Mx = 0;
-        if (robot_controller.state[4] == 1) // ry
-            My = robot_controller.ry.refresh(&robot_controller.ry, AngleCorrect(robot_pos.target_inbase.vector.ry));
-        else
-            My = openloop_thrust[4];
+        //     Mx = 0;
+        // if (robot_controller.state[4] == 1) // ry
+        //     My = robot_controller.ry.refresh(&robot_controller.ry, AngleCorrect(robot_pos.target_inbase.vector.ry));
+        // else
+        //     My = openloop_thrust[4];
 
-        if (robot_controller.state[5] == 1) // rz
-            Mz = robot_controller.rz.refresh(&robot_controller.rz, AngleCorrect(robot_pos.target_inbase.vector.rz));
-        else
-            Mz = openloop_thrust[5];
+        // if (robot_controller.state[5] == 1) // rz
+        //     Mz = robot_controller.rz.refresh(&robot_controller.rz, AngleCorrect(robot_pos.target_inbase.vector.rz));
+        // else
+        //     Mz = openloop_thrust[5];
 
 
         // 推力换算
         // Tx = NEGATIVE_BUOYANCY * tan(robot_pos.base.vector.ry * deg2rad);
 
-        robot_im_thrust.target_inworld.vector.x = Tx;
-        robot_im_thrust.target_inworld.vector.y = Ty;
-        robot_im_thrust.target_inworld.vector.z = Tz;
-        robot_im_thrust.target_inworld.extract(&(robot_im_thrust.target_inworld));
-        robot_im_thrust.world2base(&robot_im_thrust);
+        // robot_im_thrust.target_inworld.vector.x = Tx;
+        // robot_im_thrust.target_inworld.vector.y = Ty;
+        // robot_im_thrust.target_inworld.vector.z = Tz;
+        // robot_im_thrust.target_inworld.extract(&(robot_im_thrust.target_inworld));
+        // robot_im_thrust.world2base(&robot_im_thrust);
 
-        askedthrust[0] = robot_im_thrust.target_inbase.vector.x;
-        askedthrust[1] = robot_im_thrust.target_inbase.vector.y;
-        askedthrust[2] = robot_im_thrust.target_inbase.vector.z;
+        // askedthrust[0] = robot_im_thrust.target_inbase.vector.x;
+        // askedthrust[1] = robot_im_thrust.target_inbase.vector.y;
+        // askedthrust[2] = robot_im_thrust.target_inbase.vector.z;
 
-        robot_im_thrust.target_inworld.vector.x = Mx;
-        robot_im_thrust.target_inworld.vector.y = My;
-        robot_im_thrust.target_inworld.vector.z = Mz;
-        robot_im_thrust.target_inworld.extract(&(robot_im_thrust.target_inworld));
-        robot_im_thrust.world2base(&robot_im_thrust);
+        // robot_im_thrust.target_inworld.vector.x = Mx;
+        // robot_im_thrust.target_inworld.vector.y = My;
+        // robot_im_thrust.target_inworld.vector.z = Mz;
+        // robot_im_thrust.target_inworld.extract(&(robot_im_thrust.target_inworld));
+        // robot_im_thrust.world2base(&robot_im_thrust);
 
-        askedthrust[3] = robot_im_thrust.target_inbase.vector.x;
-        askedthrust[4] = robot_im_thrust.target_inbase.vector.y;
-        askedthrust[5] = robot_im_thrust.target_inbase.vector.z;
+        // askedthrust[3] = robot_im_thrust.target_inbase.vector.x;
+        // askedthrust[4] = robot_im_thrust.target_inbase.vector.y;
+        // askedthrust[5] = robot_im_thrust.target_inbase.vector.z;
 
 
         // allocate thrust
-        ThrustAllocate(askedthrust, motorthrust);
+        ThrustAllocate(openloop_thrust, motorthrust);
 
         // thrust filter
         // for (int i = 0; i < 6; i++) { motorthrust_filted[i] = meanfilter[i].refresh(&(meanfilter[i]), motorthrust[i]); }
@@ -343,11 +329,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         MotorPwmRefresh(motorthrust_filted);
 
         // led
-        if (led_motion)
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
-        else
-            HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
-        led_motion = !led_motion;
+        // if (led_motion)
+        //     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
+        // else
+        //     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
+        // led_motion = !led_motion;
     }
 }
 /* USER CODE END 0 */
@@ -397,35 +383,36 @@ int main(void)
   MX_FDCAN1_Init();
   MX_TIM5_Init();
   MX_USART1_UART_Init();
+  MX_FDCAN2_Init();
   /* USER CODE BEGIN 2 */
 
   // uart it start
   CommInit();
-  FDCAN1_Config();
-
+  // FDCAN1_Config();
+  FDCAN2_Config();
   // motor init
   MotorInit();
   HAL_Delay(50);
 
 // Data init
-  CoordinateSystems_Init(&robot);  // Robot CS
-  CoordinateSystems_Init(&target); // target CS
+  // CoordinateSystems_Init(&robot);  // Robot CS
+  // CoordinateSystems_Init(&target); // target CS
 
 // 机器人描述矩阵初始化
-    CoordinateSystems_Init(&robot_pos);
-    CoordinateSystems_Init(&robot_im_pos);
-    CoordinateSystems_Init(&robot_im_spd);
-    CoordinateSystems_Init(&robot_im_thrust);
+    // CoordinateSystems_Init(&robot_pos);
+    // CoordinateSystems_Init(&robot_im_pos);
+    // CoordinateSystems_Init(&robot_im_spd);
+    // CoordinateSystems_Init(&robot_im_thrust);
 
 
-    robot_controller.state[0] = robot_controller.state[1] = robot_controller.state[2] = 0;
-    robot_controller.state[3] = robot_controller.state[4] = robot_controller.state[5] = 0;
-    PositionalPID_Init(&(robot_controller.x), 0, 0, 0, 0, 0);  // X pid controller
-    PositionalPID_Init(&(robot_controller.y), 0, 0, 0, 0, 0);  // y pid controller
-    PositionalPID_Init(&(robot_controller.z), 0, 0, 0, 0, 0);  // z pid controller
-    PositionalPID_Init(&(robot_controller.rx), 0, 0, 0, 0, 0); // pitch pid controller
-    PositionalPID_Init(&(robot_controller.ry), 0, 0, 0, 0, 0); // roll pid controller
-    PositionalPID_Init(&(robot_controller.rz), 0, 0, 0, 0, 0); // yaw pid controller
+    // robot_controller.state[0] = robot_controller.state[1] = robot_controller.state[2] = 0;
+    // robot_controller.state[3] = robot_controller.state[4] = robot_controller.state[5] = 0;
+    // PositionalPID_Init(&(robot_controller.x), 0, 0, 0, 0, 0);  // X pid controller
+    // PositionalPID_Init(&(robot_controller.y), 0, 0, 0, 0, 0);  // y pid controller
+    // PositionalPID_Init(&(robot_controller.z), 0, 0, 0, 0, 0);  // z pid controller
+    // PositionalPID_Init(&(robot_controller.rx), 0, 0, 0, 0, 0); // pitch pid controller
+    // PositionalPID_Init(&(robot_controller.ry), 0, 0, 0, 0, 0); // roll pid controller
+    // PositionalPID_Init(&(robot_controller.rz), 0, 0, 0, 0, 0); // yaw pid controller
     transbuf[0]   = 0xfa;
     transbuf[1]   = 0xaf;
     transbuf[2]   = 0x00;
@@ -449,9 +436,16 @@ int main(void)
     HAL_TIM_Base_Start_IT(&htim1);
     HAL_TIM_Base_Start_IT(&htim2);
     HAL_TIM_Base_Start_IT(&htim3);
-    // uint8_t tx_buffer[] = "hello";
-    // HAL_UART_Transmit_IT(&huart1, tx_buffer, 5);
+
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+
+        // 设置电机2的位置为45度，优先�??1
+    // set_position(&hfdcan2, 1, 0, 0xFF);
+    // HAL_Delay(5000);
+    // set_position(&hfdcan2, 1, 90, 0xFF);
+    // HAL_Delay(5000);
+    // emergency_stop(&hfdcan2, 1, 0xFF);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -459,7 +453,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
+    // WIT_UART_Transmit();
+    // HAL_Delay(50);
   }
   /* USER CODE END 3 */
 }
@@ -537,7 +534,16 @@ void PeriphCommonClock_Config(void)
 
   /** Initializes the peripherals clock
   */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART8|RCC_PERIPHCLK_UART7;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART8|RCC_PERIPHCLK_FDCAN
+                              |RCC_PERIPHCLK_UART7;
+  PeriphClkInitStruct.PLL2.PLL2M = 2;
+  PeriphClkInitStruct.PLL2.PLL2N = 32;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 8;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
   PeriphClkInitStruct.PLL3.PLL3M = 2;
   PeriphClkInitStruct.PLL3.PLL3N = 60;
   PeriphClkInitStruct.PLL3.PLL3P = 2;
@@ -546,6 +552,7 @@ void PeriphCommonClock_Config(void)
   PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
   PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
   PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
+  PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
   PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_PLL3;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {

@@ -3,6 +3,8 @@
 #include "usart.h"
 #include "RS485_process.h"
 #include "json_process.h"
+#include "can_process.h"
+
 ThrustCurve thrustcurve[6];
 extern RobotController robot_controller;
 extern float servo0angle;
@@ -30,11 +32,11 @@ void UploadThrustCurveData(int motor_num)
         // 上传所有电机数据
         for(int i = 0; i < 6; i++) {
             len = sprintf(buffer, "Motor%d: PWM=[%d,%d,%d,%d], Thrust=[%.1f,%.1f,%.1f,%.1f]\r\n",
-                         i,
-                         (int)thrustcurve[i].pwm[0], (int)thrustcurve[i].pwm[1],
-                         (int)thrustcurve[i].pwm[2], (int)thrustcurve[i].pwm[3],
-                         thrustcurve[i].thrust[0], thrustcurve[i].thrust[1],
-                         thrustcurve[i].thrust[2], thrustcurve[i].thrust[3]);
+                        i,
+                        (int)thrustcurve[i].pwm[0], (int)thrustcurve[i].pwm[1],
+                        (int)thrustcurve[i].pwm[2], (int)thrustcurve[i].pwm[3],
+                        thrustcurve[i].thrust[0], thrustcurve[i].thrust[1],
+                        thrustcurve[i].thrust[2], thrustcurve[i].thrust[3]);
             HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
             HAL_Delay(10); // 防止数据堆积
         }
@@ -42,11 +44,11 @@ void UploadThrustCurveData(int motor_num)
     else if(motor_num >= 0 && motor_num < 6) {
         // 上传单个电机数据
         len = sprintf(buffer, "Motor%d: PWM=[%d,%d,%d,%d], Thrust=[%.1f,%.1f,%.1f,%.1f]\r\n",
-                     motor_num,
-                     (int)thrustcurve[motor_num].pwm[0], (int)thrustcurve[motor_num].pwm[1],
-                     (int)thrustcurve[motor_num].pwm[2], (int)thrustcurve[motor_num].pwm[3],
-                     thrustcurve[motor_num].thrust[0], thrustcurve[motor_num].thrust[1],
-                     thrustcurve[motor_num].thrust[2], thrustcurve[motor_num].thrust[3]);
+                    motor_num,
+                    (int)thrustcurve[motor_num].pwm[0], (int)thrustcurve[motor_num].pwm[1],
+                    (int)thrustcurve[motor_num].pwm[2], (int)thrustcurve[motor_num].pwm[3],
+                    thrustcurve[motor_num].thrust[0], thrustcurve[motor_num].thrust[1],
+                    thrustcurve[motor_num].thrust[2], thrustcurve[motor_num].thrust[3]);
         HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
     }
 }
@@ -60,13 +62,13 @@ void UploadThrustCurveData(int motor_num)
 void UploadCurrentPWMOutput(void)
 {
     char buffer[128];
-    int len = sprintf(buffer, "PWM Output: [%d,%d,%d,%d,%d,%d,%f]\r\n",
-                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_1),
-                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_2),
-                     __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_2),
-                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_3),
-                     __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1),
-                     __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_4),
+    int len = sprintf(buffer, "PWM Output: [%d,%d,%d,%d,%d,%d,%f] Camera OK\r\n",
+                    __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_1),
+                    __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_2),
+                    __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_2),
+                    __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_3),
+                    __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1),
+                    __HAL_TIM_GET_COMPARE(&htim5, TIM_CHANNEL_4),
                     (servo0angle) );
     HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 100);
 }
@@ -138,9 +140,9 @@ void MotorInit(void)
 {
     // 开启PWM输出
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
     // __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
@@ -170,14 +172,15 @@ void MotorInit(void)
     // __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, Motor_Pwm_Median_Duty - Motor_Pwm_Half_Range);
     // HAL_Delay(1000);
     // HAL_Delay(1000);
+    // HAL_Delay(1000);
+    
     __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, Motor_Pwm_Median_Duty);
-    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, Motor_Pwm_Median_Duty);
+    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, Motor_Pwm_Median_Duty);
+    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, Motor_Pwm_Median_Duty);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_1, Motor_Pwm_Median_Duty);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_2, Motor_Pwm_Median_Duty);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3, Motor_Pwm_Median_Duty);
     __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, Motor_Pwm_Median_Duty);
     HAL_Delay(1000);
-    // HAL_Delay(1000);
 }
 
 /*
@@ -196,7 +199,6 @@ void MotorPwmRefresh(float *motorthrust)
     volatile static int pwmoutput[6] = {Motor_Pwm_Median_Duty, Motor_Pwm_Median_Duty, Motor_Pwm_Median_Duty,
                                         Motor_Pwm_Median_Duty, Motor_Pwm_Median_Duty, Motor_Pwm_Median_Duty};
 
-
     // motorthrust[0] = -motorthrust[0]; 使输入反转
     motorthrust[0] = -motorthrust[0];
     motorthrust[1] = -motorthrust[1];
@@ -205,7 +207,6 @@ void MotorPwmRefresh(float *motorthrust)
     motorthrust[4] = -motorthrust[4];
     motorthrust[5] = -motorthrust[5];
 
- 
     // 对输出信号做模糊控制
     for (int i = 0; i < 6; i++)
     {
@@ -227,50 +228,36 @@ void MotorPwmRefresh(float *motorthrust)
     // 信号输出
     // __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2 * Motor_Pwm_Median_Duty - pwmoutput[0]);
     // e.g. 使输出反转
- 
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_1, pwmoutput[0]);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_2, 2 * Motor_Pwm_Median_Duty - pwmoutput[1]);
-    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2 * Motor_Pwm_Median_Duty - pwmoutput[2]);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3,  pwmoutput[3]);
-    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2 * Motor_Pwm_Median_Duty - pwmoutput[4]);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, pwmoutput[5]);
-  if(pwmoutput[3] > 3000)
-  {
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_SET);
-  }
-  else
-  {
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_RESET);
-  }
-    // printf("5  1 %d\r\n",pwmoutput[0]);
-    // printf("5  2 %d\r\n",2 * Motor_Pwm_Median_Duty - pwmoutput[1]);    
-    // printf("4  2 %d\r\n",2 * Motor_Pwm_Median_Duty - pwmoutput[2]);
-    // printf("5  4 %d\r\n",pwmoutput[3]);
-    // printf("4  1 %d\r\n",2 * Motor_Pwm_Median_Duty - pwmoutput[4]);
-    // printf("5  4 %d\r\n",pwmoutput[5]);
-    // printf("servo0: %.3f\r\n",servo0angle);
- /*
-    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 3500);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_2, 3500);
-    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 3500);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, 3500);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3, 3500);
-    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_1, 3500);
-*/
-    static uint32_t last_upload_time = 0;
-    if(HAL_GetTick() - last_upload_time > 100) 
-    { // 每1秒上传一次
-        UploadCurrentPWMOutput();
-        last_upload_time = HAL_GetTick();
+
+    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, pwmoutput[0]);
+    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, 2 * Motor_Pwm_Median_Duty - pwmoutput[1]);
+    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, pwmoutput[2]);
+    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_1, 2 * Motor_Pwm_Median_Duty - pwmoutput[3]);
+    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, pwmoutput[4]);
+    __HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3, 2 * Motor_Pwm_Median_Duty - pwmoutput[5]);
+    if(pwmoutput[3] > 3000)
+    {
+        HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_SET);
     }
+    else
+    {
+        HAL_GPIO_WritePin(GPIOD, GPIO_PIN_7, GPIO_PIN_RESET);
+    }
+
+    set_position(&hfdcan2, 1, servo0angle * 100, 0xFF);
+
+
+
+
+/*以下为485舵机*/
     // 映射servo0angle到舵机角度范围
-    float mapped_angle = line(0.2f, 0.99f, 45.0f, 135.0f, servo0angle);
+    // float mapped_angle = line(0.2f, 0.99f, 45.0f, 135.0f, servo0angle);
     
     // 确保角度在有效范围内
-    if(mapped_angle < 45.0f) mapped_angle = 45.0f;
-    if(mapped_angle > 135.0f) mapped_angle = 135.0f;
+    // if(mapped_angle < 45.0f) mapped_angle = 45.0f;
+    // if(mapped_angle > 135.0f) mapped_angle = 135.0f;
     
     // 设置舵机角度
-    servo_set_angle(1, (int16_t)mapped_angle, 100);  // 使用舵机ID=1
+    // servo_set_angle(1, mapped_angle, 100);  // 使用舵机ID=1
 }
 

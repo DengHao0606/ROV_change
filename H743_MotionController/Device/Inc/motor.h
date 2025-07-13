@@ -21,6 +21,7 @@ extern ThrustCurve thrustcurve[6];
 void ThrustCurveInit(ThrustCurve *thrustcurve);
 void MotorInit(void);
 void MotorPwmRefresh(float *motorthrust);
-
+void UploadThrustCurveData(int motor_num);
+void UploadCurrentPWMOutput(void);
 
 #endif

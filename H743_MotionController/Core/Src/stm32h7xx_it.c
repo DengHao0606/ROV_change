@@ -55,11 +55,11 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern FDCAN_HandleTypeDef hfdcan1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern DMA_HandleTypeDef hdma_uart8_rx;
+extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart8;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
@@ -219,20 +219,6 @@ void DMA1_Stream0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles FDCAN1 interrupt 0.
-  */
-void FDCAN1_IT0_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN1_IT0_IRQn 0 */
-
-  /* USER CODE END FDCAN1_IT0_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan1);
-  /* USER CODE BEGIN FDCAN1_IT0_IRQn 1 */
-
-  /* USER CODE END FDCAN1_IT0_IRQn 1 */
-}
-
-/**
   * @brief This function handles TIM1 update interrupt.
   */
 void TIM1_UP_IRQHandler(void)
@@ -286,6 +272,20 @@ void USART1_IRQHandler(void)
   /* USER CODE BEGIN USART1_IRQn 1 */
 
   /* USER CODE END USART1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles UART7 global interrupt.
+  */
+void UART7_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART7_IRQn 0 */
+
+  /* USER CODE END UART7_IRQn 0 */
+  HAL_UART_IRQHandler(&huart7);
+  /* USER CODE BEGIN UART7_IRQn 1 */
+
+  /* USER CODE END UART7_IRQn 1 */
 }
 
 /**

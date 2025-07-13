@@ -5,12 +5,12 @@
 #include <string.h>
 #include "usart.h"
 
-#define USARTx                          UART8                // 串口端口
+#define USARTx                          UART7                // 串口端口
 #define USARTx_CLK_ENABLE()             __HAL_RCC_UART8_CLK_ENABLE()
 #define GPIO_USARTx_TX_GPIO_PORT         GPIOE                 // TX引脚 GPIOA9
-#define GPIO_USARTx_TX_GPIO_PIN          GPIO_PIN_1
+#define GPIO_USARTx_TX_GPIO_PIN          GPIO_PIN_7
 #define GPIO_USARTx_RX_GPIO_PORT         GPIOE                 // RX引脚 GPIOA10
-#define GPIO_USARTx_RX_GPIO_PIN          GPIO_PIN_0
+#define GPIO_USARTx_RX_GPIO_PIN          GPIO_PIN_8
 
 // 协议定义
 #define FRAME_HEAD_REQUEST1             0x12                // 请求帧头1

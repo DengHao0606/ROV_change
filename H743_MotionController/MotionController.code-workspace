@@ -18,7 +18,13 @@
             "stdlib.h": "c",
             "tim.h": "c",
             "rs485_process.h": "c",
-            "ms5837.h": "c"
+            "motor.h": "c",
+            "stdint.h": "c",
+            "coordinate_system.h": "c",
+            "thrust.h": "c",
+            "pid_models.h": "c",
+            "wt_usart.h": "c",
+            "can_process.h": "c"
         }
     },
     "extensions": {}

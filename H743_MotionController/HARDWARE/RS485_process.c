@@ -45,5 +45,5 @@ void servo_set_angle(uint8_t servo_id, float angle, uint16_t time_ms)
     
     tx_buf[11] = calculate_checksum(tx_buf, 11);  // 计算前11字节校验和
     
-    HAL_UART_Transmit_IT(&huart8, tx_buf, sizeof(tx_buf));
+    HAL_UART_Transmit_IT(&huart7, tx_buf, sizeof(tx_buf));
 }

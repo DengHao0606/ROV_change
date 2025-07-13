@@ -3,6 +3,7 @@
 #include "main.h"
 #include "motor.h"
 #include "json_process.h"
+#include "wt_usart.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,9 @@ RecBuf uart4rec = {0};
 RecBuf uart7rec = {0};
 RecBuf uart8rec = {0};
 
-
+extern uint8_t rx_state;
+extern Attitude attitude;
+extern char string_buf[128];
 uint8_t dvlstate = 0;
 
 IMU imu;
@@ -51,7 +54,7 @@ void CommInit(void)
 
     HAL_UART_Receive_IT(&huart1, uart1rec.buf, 1);
     HAL_UART_Receive_IT(&huart7, uart7rec.buf, 1);
-    HAL_UART_Receive_IT(&huart8, uart4rec.buf, 1);
+    HAL_UART_Receive_IT(&huart8, uart8rec.buf, 1);
 
     HAL_Delay(100); // 稍作延迟防止无法进入中断
 }
@@ -88,6 +91,39 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
         
         HAL_UART_Receive_IT(&huart1, uart1rec.buf + uart1rec.cnt, 1);
     }
+    //姿态传感器
+    // if (huart == &huart8) 
+    // {
+	// 	if(uart8rec.buf[uart8rec.cnt-2] == 0x50 && uart8rec.buf[uart8rec.cnt-1] == 0x03 && uart8rec.buf[uart8rec.cnt] == 0x06)
+	// 	{
+	// 		uart8rec.cnt = 2;
+	// 		uart8rec.buf[0] = 0x50;
+	// 		uart8rec.buf[1] = 0x03;
+	// 		uart8rec.buf[2] = 0x06;
+	// 	}
+	// 	if(uart8rec.cnt == 10)
+	// 	{
+			// uint16_t crc;
+			// crc = crc16(uart8rec.buf, 9);
+			//if(((crc >> 8 & 0xFF) == uart1rec.buf[9]) && ((crc & 0xFF) == uart1rec.buf[10]))
+	// 		if(1)
+	// 		{
+    //             rx_state = 1;
+	// 			attitude_solve(uart8rec.buf, rx_state);
+	// 			sprintf(string_buf,"yaw: %0.3f, pitch: %0.3f, roll: %0.3f, ax:: %0.3f, ay: %0.3f, az: %0.3f.",
+    //                     attitude.yaw, attitude.pitch, attitude.roll, attitude.ax, attitude.ay, attitude.az);
+	// 			HAL_UART_Transmit_IT(&huart1, (uint8_t *)string_buf, strlen(string_buf));
+	// 			uart8rec.cnt = 201;
+	// 		}
+	// 	}
+	// 	if (uart8rec.cnt > 200) 
+    //         uart8rec.cnt = 0;
+	// 	else 
+    //         uart8rec.cnt++;
+        
+	//     HAL_UART_Receive_IT(&huart8,uart8rec.buf + uart8rec.cnt,1);
+    // }
+
 //     if (huart == &huart4)
 //     {
 //         threadmonitor_uart4 = 200;
@@ -168,38 +204,38 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
 
 //     if (buf[0] == 0xfa && buf[1] == 0xaf && check == buf[91]) // 校验帧头
 //     {
-//         // 读数据缓冲
+        // 读数据缓冲
 //         memcpy(&(imu_data[3]), buf + 2, 12); // 姿态
 //         memcpy(&(imu_data[0]), buf + 54, 8); // x y
 //         memcpy(&(imu_data[2]), buf + 80, 4); // Z
 //         imu.imustate = buf[66];              // 导航状态
 //         imu.dvlstate = buf[67];
-//         // memcpy(&imu_data[6], buf + 26, 12);  // 速度
-//         // memcpy(&(imu.spd.ry), buf + 68, 4);  // 横滚速度
-//         // memcpy(&(imu.spd.rx), buf + 72, 4);  // 俯仰速度
-//         // memcpy(&(imu.spd.rz), buf + 76, 4);  // 转向速度
+        // memcpy(&imu_data[6], buf + 26, 12);  // 速度
+        // memcpy(&(imu.spd.ry), buf + 68, 4);  // 横滚速度
+        // memcpy(&(imu.spd.rx), buf + 72, 4);  // 俯仰速度
+        // memcpy(&(imu.spd.rz), buf + 76, 4);  // 转向速度
 
-//         // 读取IMU数据
+        // 读取IMU数据
 //         imu.pos.y  = imu_data[0];
 //         imu.pos.x  = -imu_data[1];
-//         //imu.pos.z  = imu_data[2];
+        //imu.pos.z  = imu_data[2];
 //         imu.pos.z = checkeddepth;
 //         imu.pos.ry = imu_data[3];
 //         imu.pos.rx = imu_data[4];
 //         imu.pos.rz = imu_data[5];
-//         // if (imu_data[0] > -10 && imu_data[0] < 10) imu.pos.y = imu_data[0];
-//         // if (imu_data[1] > -10 && imu_data[1] < 10) imu.pos.x = -imu_data[1];
-//         // if (imu_data[2] > 0 && imu_data[2] < 5) imu.pos.z = imu_data[2];
-//         // if (imu_data[3] > -180 && imu_data[3] < 180) imu.pos.ry = imu_data[3];
-//         // if (imu_data[4] > -180 && imu_data[4] < 180) imu.pos.rx = imu_data[4];
-//         // if (imu_data[5] > -180 && imu_data[5] < 180) imu.pos.rz = imu_data[5];
+        // if (imu_data[0] > -10 && imu_data[0] < 10) imu.pos.y = imu_data[0];
+        // if (imu_data[1] > -10 && imu_data[1] < 10) imu.pos.x = -imu_data[1];
+        // if (imu_data[2] > 0 && imu_data[2] < 5) imu.pos.z = imu_data[2];
+        // if (imu_data[3] > -180 && imu_data[3] < 180) imu.pos.ry = imu_data[3];
+        // if (imu_data[4] > -180 && imu_data[4] < 180) imu.pos.rx = imu_data[4];
+        // if (imu_data[5] > -180 && imu_data[5] < 180) imu.pos.rz = imu_data[5];
 
-//         // imu.spd.x = -imu_data[6];
-//         // imu.spd.y = imu_data[7];
-//         // imu.spd.z = imu_data[8];
+        // imu.spd.x = -imu_data[6];
+        // imu.spd.y = imu_data[7];
+        // imu.spd.z = imu_data[8];
 //     }
 
-//     // led
+    // led
 //     if (led_uart7)
 //         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, GPIO_PIN_SET);
 //     else
@@ -225,20 +261,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
 //             memcpy(openloop_thrust, buf + 3, 24);
 //             break;
 //         case 0x03: // 目标位置下行
-//             // 移动至指定位置
+            // 移动至指定位置
 //             if (buf[3] == 0x00)
 //             {
 //                 memcpy(&(robot.target_inworld.vector), buf + 4, 24);
 //                 robot.target_inworld.extract(&(robot.target_inworld));
 //             }
-//             // 移动相对距离
+            // 移动相对距离
 //             else if (buf[3] == 0x01)
 //             {
 //                 memcpy(&(robot.target_inbase.vector), buf + 4, 24);
 //                 robot.target_inbase.extract(&(robot.target_inbase));
 //                 robot.base2world(&robot);
 //             }
-//             // 目标值步进
+            // 目标值步进
 //             else if (buf[3] == 0x02)
 //             {
 //                 memcpy(&(target.target_inbase.vector), buf + 4, 24);                         // 接收步进信息
@@ -317,7 +353,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
 //         default: break;
 //     }
 
-//     // led
+    // led
 //     if (led_uart4)
 //         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
 //     else
@@ -338,26 +374,26 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // 串口接收中断
 //     HAL_UART_Transmit(huart, BUFIMUSETMODE, 14, 10); // 设置室内导航模式
 // }
 
-// /*
-//  * 函数名: dvl_shutdown
-//  * 描述  : 关闭Dvl
-//  * 输入  : /
-//  * 输出  : /
-//  * 备注  : /
-//  */
+/*
+ * 函数名: dvl_shutdown
+ * 描述  : 关闭Dvl
+ * 输入  : /
+ * 输出  : /
+ * 备注  : /
+ */
 // void dvl_shutdown(UART_HandleTypeDef *huart)
 // {
 //     uint8_t BUFDVLSHUTDOWN[14] = {0xFC, 0xCF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0xFD, 0xDF};
 //     HAL_UART_Transmit(huart, BUFDVLSHUTDOWN, 14, 10); // 关闭DVL
 // }
 
-// /*
-//  * 函数名: dvl_startup
-//  * 描述  : 开启Dvl
-//  * 输入  : /
-//  * 输出  : /
-//  * 备注  : /
-//  */
+/*
+ * 函数名: dvl_startup
+ * 描述  : 开启Dvl
+ * 输入  : /
+ * 输出  : /
+ * 备注  : /
+ */
 // void dvl_startup(UART_HandleTypeDef *huart)
 // {
 //     uint8_t BUFDVLPOWERON[14] = {0xFC, 0xCF, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xFD, 0xDF};
